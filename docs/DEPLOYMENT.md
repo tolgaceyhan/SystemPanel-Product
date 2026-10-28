@@ -34,7 +34,8 @@ SDK 10 ile `net9.0` hedefini derlerken test/ef araçları için `DOTNET_ROLL_FOR
 3. SQL için mümkünse Windows Authentication (`Integrated Security=True`) ve uygulama havuzu kimliği kullanın.
 4. `RoleMapping` ve `ActiveDirectory:Scope` → bkz. [AUTHORIZATION.md](AUTHORIZATION.md).
 5. İlk kurulum yöneticisi (opsiyonel): `Bootstrap__AdminUserName`, `Bootstrap__AdminPassword` ortam değişkenleri. Parola en az 12 karakter, büyük/küçük harf ve rakam içermeli. Hesap oluştuktan sonra **bu değişkenleri kaldırın.**
-6. Dosya yolları: `FileStorage:Root`, `Gpo:BackupRoot`, `Security:DataProtectionKeysPath` (boşsa `%ProgramData%\SystemPanel\...`).
+6. Organizasyon yapısı: `Organization:UnitLabel` / `UnitLabelPlural` (ör. "İl"/"İller", "Bölge"/"Bölgeler"; varsayılan "Birim"). Birimleri Türkiye illerine karşılık geliyorsa `Organization:Map:Enabled=true` ile il haritası modülü açılır (varsayılan kapalı).
+7. Dosya yolları: `FileStorage:Root`, `Gpo:BackupRoot`, `Security:DataProtectionKeysPath` (boşsa `%ProgramData%\SystemPanel\...`).
 
 ## 3a. Lisans
 

@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Options;
+using SystemPanel.Configuration;
 using SystemPanel.Models;
 using SystemPanel.Security;
 using SystemPanel.Services;
@@ -12,17 +15,28 @@ public class MapUnitsController : Controller
     private readonly IAdUserService _adUserService;
     private readonly IDpServiceStatusService _dpService;
     private readonly AutoHealService _autoHealService;
+    private readonly bool _mapEnabled;
 
     public MapUnitsController(
         IMapUnitService mapUnitService,
         IAdUserService adUserService,
         IDpServiceStatusService dpService,
-        AutoHealService autoHealService)
+        AutoHealService autoHealService,
+        IOptions<OrganizationOptions> organization)
     {
+        _mapEnabled = organization.Value.Map.Enabled;
         _mapUnitService = mapUnitService;
         _adUserService = adUserService;
         _dpService = dpService;
         _autoHealService = autoHealService;
+    }
+
+    /// <summary>Harita modülü kapalıysa (Organization:Map:Enabled=false) tüm uçlar 404 döner.</summary>
+    public override void OnActionExecuting(ActionExecutingContext context)
+    {
+        if (!_mapEnabled)
+            context.Result = NotFound();
+        base.OnActionExecuting(context);
     }
 
     public IActionResult Index() => View();

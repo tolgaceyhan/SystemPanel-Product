@@ -70,6 +70,8 @@ Notlar:
 
 ## 4. Organizasyonel kapsam
 
+"Birim" kurumun organizasyon yapısındaki bir düğümdür (il, bölge, şube, kampüs...). Arayüzdeki adı `Organization:UnitLabel` ile belirlenir. Aşağıdaki örnekler il yapısını kullanır.
+
 `OrganizationalScope` = kullanıcının işlem yapabileceği OU kökleri listesi.
 
 - `scope.all` izni → sınırsız.

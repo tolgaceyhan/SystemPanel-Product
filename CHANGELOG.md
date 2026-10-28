@@ -18,4 +18,5 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
 - **Platform:** HTTPS/HSTS, güvenli cookie, DPAPI korumalı yapılandırma değerleri, DataProtection anahtar koruması, güvenlik başlıkları, CSRF, ProblemDetails, health uçları.
 - **Lisans:** çevrimdışı imzalı lisans dosyası (ECDSA P-256), lisans ekranı, agent sınırı; lisans sorunu mevcut işlemleri durdurmaz.
 - **Marka:** ürün adı ve logolar yapılandırılabilir (`Branding`).
+- **Organizasyon yapısı:** birim etiketi yapılandırılabilir (`Organization:UnitLabel`; il, bölge, şube...). Türkiye il haritası opsiyonel modül (`Organization:Map:Enabled`, varsayılan kapalı).
 - Duyuru, SMS, dosya yönetimi, log ve istatistik modülleri.

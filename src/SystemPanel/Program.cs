@@ -28,6 +28,7 @@ builder.Configuration.AddDpapiProtectedValues();
 var security = builder.Configuration.GetSection(SecurityOptions.SectionName).Get<SecurityOptions>() ?? new SecurityOptions();
 builder.Services.Configure<SecurityOptions>(builder.Configuration.GetSection(SecurityOptions.SectionName));
 builder.Services.Configure<BrandingOptions>(builder.Configuration.GetSection(BrandingOptions.SectionName));
+builder.Services.Configure<OrganizationOptions>(builder.Configuration.GetSection(OrganizationOptions.SectionName));
 
 // ========================
 // Serilog (teknik loglar; güvenlik olayları ayrıca AuditEvents tablosuna yazılır)

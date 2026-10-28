@@ -81,11 +81,11 @@
             <li class="nav-item"><a class="nav-link text-white" asp-controller="Logs" asp-action="Index"><i class="fas fa-journal-whills me-2"></i> Uygulama Logları</a></li>
         }
 
-        @if (Has(Permissions.MonitoringView))
+        @if (Organization.Value.Map.Enabled && Has(Permissions.MonitoringView))
         {
             <li class="nav-item">
                 <a class="nav-link text-white" asp-controller="MapUnits" asp-action="Index">
-                    <i class="fas fa-map-marked-alt me-2"></i> İl / Birim Haritası
+                    <i class="fas fa-map-marked-alt me-2"></i> @Organization.Value.UnitLabel Haritası
                 </a>
             </li>
         }

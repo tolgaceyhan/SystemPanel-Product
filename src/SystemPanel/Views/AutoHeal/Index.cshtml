@@ -1,11 +1,11 @@
-﻿@model List<SystemPanel.Models.AutoHealState>
+@model List<SystemPanel.Models.AutoHealState>
 
-<h3>🤖 Auto-Heal Durumu (İl Bazlı)</h3>
+<h3>🤖 Auto-Heal Durumu (@Organization.Value.UnitLabel Bazlı)</h3>
 
 <table class="table table-bordered align-middle">
     <thead class="table-light">
         <tr>
-            <th>İl</th>
+            <th>@Organization.Value.UnitLabel</th>
             <th>Son Deneme</th>
             <th>Sonuç</th>
             <th>Hata</th>

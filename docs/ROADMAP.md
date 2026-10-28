@@ -15,7 +15,7 @@
 
 1. **Kurulum paketi:** sihirbaz (MSI), veritabanı oluşturma, ilk yönetici, sertifika kontrolü.
 2. **Kod imzalama:** web, agent, dashboard ve kurulum paketleri.
-3. **Genelleştirme:** "il" kavramının yapılandırılabilir "organizasyon birimi" olması; Türkiye haritası opsiyonel modül.
+3. ✅ **Genelleştirme:** yapılandırılabilir birim etiketi; Türkiye haritası opsiyonel modül.
 4. **CDN bağımlılıklarının yerelleştirilmesi** (Chart.js, toastr, Bootstrap Icons) ve tam CSP.
 5. Harita/istatistik ekranlarında stub veri yerine gerçek veri (MapUnitService, DP listesi). `SccmDpSnapshot` kaynağının ürüne dahil edilmesi.
 6. İzleme: çevrimdışı uyarısı, alarm onaylama ve susturma, sunucu bazında eşikler.

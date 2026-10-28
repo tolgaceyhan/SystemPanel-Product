@@ -158,7 +158,7 @@ $ErrorActionPreference = 'Stop'
 | | `server` | `agent` |
 |---|---|---|
 | Nerede | SystemPanel web sunucusu | Hedef sunucudaki SystemPanel Agent servisi |
-| Kimlik | Uygulama havuzu hesabı (AD yetkileri delege edilmiş) | Agent servis hesabı (varsayılan LocalSystem) |
+| Kimlik | Uygulama havuzu hesabı (AD yetkileri delege edilmiş) | Agent servis hesabı (`NT SERVICE\SystemPanelAgent`, düşük yetkili) |
 | Modüller | `ActiveDirectory` (RSAT) vb. sunucuda kurulu olmalı | Hedefte kurulu olmalı (ör. `WebAdministration`) |
 | Ek kontrol | Kapsam (`ad-dn`) | Agent'ın **yerel izin listesi** + kendi anahtar listesi; `ad-dn` yok |
 | Çağrı | `powershell.exe -NoProfile -NonInteractive -File run.ps1 -Param değer …` (`Automation:PowerShellPath`) | aynı (`Automation:PowerShellPath`, agentsettings.json) |

@@ -88,6 +88,8 @@ pwsh ./build/Build-Release.ps1 -Version 1.0.0 -SigningCertThumbprint <kod-imzala
 
 ## 6. Doğrulama
 
+Kurulumdan önce `scripts\Test-SystemPanelPrerequisites.ps1`, sonra `scripts\Test-SystemPanelDeployment.ps1` çalıştırın. İkisi de salt okunurdur. İlk gerçek ortam denemesi için adım adım plan: [FIELD-VALIDATION.md](FIELD-VALIDATION.md).
+
 ```text
 GET  /health/live          → 200 {"status":"Healthy"}          (anonim)
 GET  /health/ready         → settings.view ile: db / ldap / filesystem

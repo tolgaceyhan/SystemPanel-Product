@@ -49,6 +49,12 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
   - Kurum anahtarı iptal edilince başlamamış talepler iptal edilir ve zamanlamalar kapatılır (audit'li). Panel özel anahtar PEM'ini reddeder.
   - Katalog yönetiminde imzalayan kaynak (üretici veya kurum) ve iptal durumu gösterilir.
   - Runbook geliştirme kılavuzu (`docs/RUNBOOK-DEVELOPMENT.md`) ve dört örnek runbook (`runbooks/examples`); sürüm paketine `tools\sprunbook.exe` ve `runbook-examples\` eklendi.
+- **Saha doğrulaması:**
+  - Gerçek ortam test planı (`docs/FIELD-VALIDATION.md`).
+  - Salt okunur ön koşul kontrolü (`Test-SystemPanelPrerequisites.ps1`): IIS/ANCM, sertifika, SQL, LDAPS, RSAT, WebView2.
+  - Kurulum sonrası duman testi (`Test-SystemPanelDeployment.ps1`): sağlık, güvenlik başlıkları, cookie bayrakları, anonim erişim.
+  - Raporlar adları varsayılan olarak gizler.
+- **Düzeltme:** TempData cookie'si de `Secure` + `HttpOnly` bayraklarını taşıyor (duman testiyle bulundu).
 - **Lisans:** çevrimdışı imzalı lisans dosyası (ECDSA P-256), lisans ekranı, agent sınırı; lisans sorunu mevcut işlemleri durdurmaz.
 - **Marka:** ürün adı ve logolar yapılandırılabilir (`Branding`).
 - **Organizasyon yapısı:** birim etiketi yapılandırılabilir (`Organization:UnitLabel`; il, bölge, şube...). Türkiye il haritası opsiyonel modül (`Organization:Map:Enabled`, varsayılan kapalı).

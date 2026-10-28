@@ -26,7 +26,7 @@
 
 ## 1.x (P2)
 
-1. **Otomasyon motoru (runbook):** ✅ Faz 1 (MVP), Faz 2 (agent üzerinde çalıştırma), Faz 3 (zamanlama ve alarm tetikleyicileri) ve Faz 4 (kurum runbook'ları: `sprunbook` aracı, [geliştirme kılavuzu](RUNBOOK-DEVELOPMENT.md), örnek kütüphane, anahtar iptali) uygulandı ([AUTOMATION.md](AUTOMATION.md)). Sonraki adaylar: gerçek ortam doğrulaması, idempotent runbook'lar için yeniden deneme, paralel çalıştırma, harici yürütücü entegrasyonu. Tasarım [ADR-002](ADR/002-automation-runbooks.md). İmzalı katalog, parametre şeması, önizleme (dry-run), dört göz onayı, zamanlama, olay tetikleyici, audit. Keyfi komut çalıştırma yok. Fazlar: MVP → agent → zamanlama/olay → kurum runbook'ları.
+1. **Otomasyon motoru (runbook):** ✅ Faz 1 (MVP), Faz 2 (agent üzerinde çalıştırma), Faz 3 (zamanlama ve alarm tetikleyicileri) ve Faz 4 (kurum runbook'ları: `sprunbook` aracı, [geliştirme kılavuzu](RUNBOOK-DEVELOPMENT.md), örnek kütüphane, anahtar iptali) uygulandı ([AUTOMATION.md](AUTOMATION.md)). Sonraki adaylar: gerçek ortam doğrulaması ([plan](FIELD-VALIDATION.md)), idempotent runbook'lar için yeniden deneme, paralel çalıştırma, harici yürütücü entegrasyonu. Tasarım [ADR-002](ADR/002-automation-runbooks.md). İmzalı katalog, parametre şeması, önizleme (dry-run), dört göz onayı, zamanlama, olay tetikleyici, audit. Keyfi komut çalıştırma yok. Fazlar: MVP → agent → zamanlama/olay → kurum runbook'ları.
 2. Kullanıcı yaşam döngüsü otomasyonu (işe giriş/çıkış), self-servis parola sıfırlama.
 3. GPO: şablondan oluşturma, ayar raporu, değişiklik onayı.
 4. SCCM: koleksiyon/dağıtım durumu (salt okunur), istemci sağlık raporu.

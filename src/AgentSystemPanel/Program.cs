@@ -7,9 +7,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 // Kurulum betiğinin yazdığı makineye özel ayarlar (sunucu adresi, AgentId, DPAPI korumalı anahtar).
 // Program klasörü dışında tutulur; agent güncellemelerinde korunur.
-var machineSettings = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "SystemPanel", "Agent", "agentsettings.json");
-builder.Configuration.AddJsonFile(machineSettings, optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(AgentPaths.MachineSettingsFile, optional: true, reloadOnChange: false);
 builder.Configuration.AddEnvironmentVariables(prefix: "SYSTEMPANEL_AGENT_");
 
 builder.Services.AddWindowsService(o => o.ServiceName = "SystemPanelAgent");
@@ -31,5 +29,9 @@ builder.Services.AddSingleton<IMetricCollector, CpuCollector>();
 builder.Services.AddSingleton<IMetricCollector, MemoryCollector>();
 builder.Services.AddSingleton<IMetricCollector, DiskCollector>();
 builder.Services.AddHostedService<AgentWorker>();
+
+// Runbook işleri (ADR-002 Faz 2). Agent:Automation:Enabled=false (varsayılan) ise çalışan hemen durur.
+builder.Services.AddSingleton<AgentSystemPanel.Automation.IAgentScriptRunner, AgentSystemPanel.Automation.PowerShellAgentScriptRunner>();
+builder.Services.AddHostedService<AgentSystemPanel.Automation.AgentCommandWorker>();
 
 builder.Build().Run();

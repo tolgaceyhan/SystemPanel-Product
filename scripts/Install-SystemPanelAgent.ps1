@@ -20,7 +20,11 @@ param(
     [Parameter(Mandatory = $true)][guid]$AgentId,
     [string]$SourcePath = (Join-Path $PSScriptRoot 'publish'),
     [string]$InstallPath = (Join-Path $env:ProgramFiles 'SystemPanel\Agent'),
-    [switch]$AllowInsecureHttp
+    [switch]$AllowInsecureHttp,
+    # Otomasyon (runbook) işleri: verilirse açılır ve yalnızca bu runbook'lar çalıştırılabilir. Bkz. docs/AUTOMATION.md
+    [ValidatePattern('^[a-z0-9]+(\.[a-z0-9-]+){1,5}$')][string[]]$AllowedRunbooks,
+    # Ek güvenilen runbook imzalama açık anahtarları (PEM). Üretici anahtarı agent'a gömülüdür.
+    [string[]]$TrustedRunbookKeyFiles
 )
 
 $ErrorActionPreference = 'Stop'
@@ -75,7 +79,30 @@ $settings = [ordered]@{
         AllowInsecureHttp = [bool]$AllowInsecureHttp
     }
 }
-$settings | ConvertTo-Json -Depth 4 | Set-Content -Path $configFile -Encoding UTF8
+
+# Otomasyon: parametre verildiyse yeni ayar; verilmediyse güncellemede mevcut ayar korunur (varsayılan kapalı).
+if ($AllowedRunbooks) {
+    $keyFiles = @()
+    foreach ($file in @($TrustedRunbookKeyFiles)) {
+        if (-not $file) { continue }
+        if (-not (Test-Path $file)) { throw "Runbook anahtar dosyası bulunamadı: $file" }
+        $target = Join-Path $configDir (Split-Path $file -Leaf)
+        Copy-Item -Path $file -Destination $target -Force
+        $keyFiles += (Split-Path $file -Leaf)
+    }
+    $settings.Agent['Automation'] = [ordered]@{
+        Enabled         = $true
+        AllowedRunbooks = @($AllowedRunbooks)
+        TrustedKeyFiles = $keyFiles
+    }
+}
+elseif (Test-Path $configFile) {
+    $previous = Get-Content $configFile -Raw | ConvertFrom-Json
+    if ($previous.Agent.PSObject.Properties.Name -contains 'Automation') {
+        $settings.Agent['Automation'] = $previous.Agent.Automation
+    }
+}
+$settings | ConvertTo-Json -Depth 6 | Set-Content -Path $configFile -Encoding UTF8
 
 # 4) Servis
 if (-not $existing) {

@@ -43,6 +43,55 @@ public sealed class AgentApiClient
     public Task<SendResult> SendMetricsAsync(AgentMetricsRequest request, CancellationToken ct)
         => PostAsync(AgentApi.MetricsPath, request, readHeartbeat: false, ct);
 
+    /// <summary>Sıradaki runbook işi (ADR-002 Faz 2). İş yoksa (Success, null).</summary>
+    public async Task<(SendOutcome Outcome, AgentCommand? Command)> GetNextCommandAsync(CancellationToken ct)
+    {
+        using var message = CreateRequest(AgentApi.NextCommandPath, content: null);
+        try
+        {
+            using var response = await _factory.CreateClient(HttpClientName).SendAsync(message, ct);
+            var outcome = Classify(response.StatusCode);
+            if (outcome != SendOutcome.Success || response.StatusCode == HttpStatusCode.NoContent)
+                return (outcome, null);
+            return (outcome, await response.Content.ReadFromJsonAsync<AgentCommand>(cancellationToken: ct));
+        }
+        catch (HttpRequestException)
+        {
+            return (SendOutcome.Transient, null);
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return (SendOutcome.Transient, null);
+        }
+    }
+
+    /// <summary>İş sonucu. 404/409 (iş artık bu agent'ın değil / zaman aşımına düştü) Rejected olarak döner.</summary>
+    public async Task<SendOutcome> SendCommandResultAsync(Guid runId, AgentCommandResult result, CancellationToken ct)
+    {
+        using var message = CreateRequest(string.Format(AgentApi.CommandResultPathFormat, runId), JsonContent.Create(result));
+        try
+        {
+            using var response = await _factory.CreateClient(HttpClientName).SendAsync(message, ct);
+            return Classify(response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return SendOutcome.Transient;
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return SendOutcome.Transient;
+        }
+    }
+
+    private HttpRequestMessage CreateRequest(string path, HttpContent? content)
+    {
+        var message = new HttpRequestMessage(HttpMethod.Post, new Uri(new Uri(_options.ServerUrl.TrimEnd('/') + "/"), path)) { Content = content };
+        message.Headers.Add(AgentApi.AgentIdHeader, _options.AgentId);
+        message.Headers.Add(AgentApi.AgentKeyHeader, _key.Value);
+        return message;
+    }
+
     private async Task<SendResult> PostAsync<T>(string path, T body, bool readHeartbeat, CancellationToken ct)
     {
         var client = _factory.CreateClient(HttpClientName);

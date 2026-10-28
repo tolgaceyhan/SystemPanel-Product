@@ -26,4 +26,9 @@
   <ItemGroup>
     <InternalsVisibleTo Include="AgentSystemPanel.Tests" />
   </ItemGroup>
+
+  <!-- Üretici runbook imzalama açık anahtarı (sunucuyla aynı dosya). Yoksa yalnızca Agent:Automation:TrustedKeyFiles geçerlidir. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\SystemPanel\Automation\runbook-vendor-public.pem" Condition="Exists('..\SystemPanel\Automation\runbook-vendor-public.pem')" LogicalName="SystemPanel.Agent.runbook-vendor-public.pem" />
+  </ItemGroup>
 </Project>

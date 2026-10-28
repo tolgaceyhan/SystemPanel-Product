@@ -46,6 +46,9 @@ public sealed class AgentOptions
     /// </summary>
     public bool AllowInsecureHttp { get; set; }
 
+    /// <summary>Otomasyon (runbook) işleri. Varsayılan KAPALI.</summary>
+    public AgentAutomationOptions Automation { get; set; } = new();
+
     internal static readonly byte[] KeyEntropy = Encoding.UTF8.GetBytes("SystemPanel.Agent.Key.v1");
 
     /// <summary>Yapılandırmayı doğrular; sorunları Türkçe mesaj olarak döndürür (boşsa geçerli).</summary>
@@ -66,6 +69,7 @@ public sealed class AgentOptions
 
         if (IntervalSeconds is < 5 or > 3600) errors.Add("Agent:IntervalSeconds 5-3600 olmalıdır.");
         if (TimeoutSeconds is < 2 or > 120) errors.Add("Agent:TimeoutSeconds 2-120 olmalıdır.");
+        if (Automation.Enabled && Automation.PollSeconds is < 5 or > 3600) errors.Add("Agent:Automation:PollSeconds 5-3600 olmalıdır.");
 
         return errors;
     }
@@ -100,4 +104,42 @@ public sealed class AgentOptions
         => string.IsNullOrWhiteSpace(BufferDirectory)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "SystemPanel", "Agent", "buffer")
             : BufferDirectory;
+}
+
+/// <summary>
+/// Agent'ta runbook çalıştırma (ADR-002 Faz 2). Sunucu ele geçirilse bile agent yalnızca:
+/// <list type="bullet">
+/// <item>bu bölüm açıkça etkinleştirildiyse,</item>
+/// <item>runbook kimliği <see cref="AllowedRunbooks"/> listesindeyse,</item>
+/// <item>paket agent'ın KENDİ güvendiği bir anahtarla imzalanmışsa</item>
+/// </list>
+/// iş çalıştırır.
+/// </summary>
+public sealed class AgentAutomationOptions
+{
+    public bool Enabled { get; set; }
+
+    /// <summary>Bu sunucuda çalıştırılabilecek runbook kimlikleri (ör. "server.service.restart").</summary>
+    public List<string> AllowedRunbooks { get; set; } = new();
+
+    /// <summary>
+    /// Ek güvenilen imzalama açık anahtarları (PEM dosya yolları; göreli yollar agent ayar klasörüne göre).
+    /// Üretici anahtarı derlemeye gömülüdür.
+    /// </summary>
+    public List<string> TrustedKeyFiles { get; set; } = new();
+
+    public int PollSeconds { get; set; } = 15;
+
+    public string PowerShellPath { get; set; } = "powershell.exe";
+
+    /// <summary>Boşsa %ProgramData%\SystemPanel\Agent\automation-work.</summary>
+    public string? WorkDirectory { get; set; }
+
+    /// <summary>Sunucuya gönderilen çıktı üst sınırı (stdout ve stderr ayrı ayrı).</summary>
+    public int MaxOutputBytes { get; set; } = 256 * 1024;
+
+    public string ResolveWorkDirectory()
+        => string.IsNullOrWhiteSpace(WorkDirectory)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "SystemPanel", "Agent", "automation-work")
+            : WorkDirectory;
 }

@@ -128,6 +128,10 @@
   -->
   <ItemGroup>
     <EmbeddedResource Include="Licensing\license-public.pem" Condition="Exists('Licensing\license-public.pem')" LogicalName="SystemPanel.Licensing.license-public.pem" />
+    <!-- Yerleşik runbook kataloğunu imzalayan üretici anahtarı (ADR-002). Yoksa yalnızca kurumun kaydettiği anahtarlar geçerlidir. -->
+    <EmbeddedResource Include="Automation\runbook-vendor-public.pem" Condition="Exists('Automation\runbook-vendor-public.pem')" LogicalName="SystemPanel.Automation.runbook-vendor-public.pem" />
+    <!-- İmzalı yerleşik runbook paketleri (sürüm paketi üretilirken imzalanır). -->
+    <Content Include="runbooks\*.sprb" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

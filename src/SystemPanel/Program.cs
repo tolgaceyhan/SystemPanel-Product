@@ -188,6 +188,17 @@ builder.Services.Configure<SystemPanel.Setup.SetupOptions>(builder.Configuration
 builder.Services.AddScoped<SystemPanel.Setup.SetupService>();
 builder.Services.AddHostedService<SystemPanel.Setup.SetupTokenInitializer>();
 
+// Otomasyon motoru (ADR-002): imzalı runbook'lar, dört göz onayı, audit.
+builder.Services.Configure<SystemPanel.Automation.AutomationOptions>(builder.Configuration.GetSection(SystemPanel.Automation.AutomationOptions.SectionName));
+builder.Services.AddSingleton<SystemPanel.Automation.IVendorRunbookKeyProvider, SystemPanel.Automation.EmbeddedVendorRunbookKeyProvider>();
+builder.Services.AddScoped<SystemPanel.Automation.RunbookTrustStore>();
+builder.Services.AddScoped<SystemPanel.Automation.RunbookCatalog>();
+builder.Services.AddScoped<SystemPanel.Automation.RunbookRunService>();
+builder.Services.AddSingleton<SystemPanel.Automation.IRunbookScriptHost, SystemPanel.Automation.PowerShellRunbookScriptHost>();
+builder.Services.AddHostedService<SystemPanel.Automation.RunbookCatalogInitializer>();
+if (builder.Configuration.GetValue("BackgroundJobs:Automation:Enabled", true))
+    builder.Services.AddHostedService<SystemPanel.Automation.AutomationWorker>();
+
 // Ürün lisansı (çevrimdışı, imzalı dosya). Bkz. docs/LICENSING.md
 builder.Services.Configure<SystemPanel.Licensing.LicensingOptions>(builder.Configuration.GetSection(SystemPanel.Licensing.LicensingOptions.SectionName));
 builder.Services.AddSingleton<SystemPanel.Licensing.ILicensePublicKeyProvider, SystemPanel.Licensing.EmbeddedLicensePublicKeyProvider>();

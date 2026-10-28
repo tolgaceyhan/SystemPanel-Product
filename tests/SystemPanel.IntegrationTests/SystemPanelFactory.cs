@@ -42,6 +42,7 @@ public sealed class SystemPanelFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Security__DataProtectionKeysPath", _keysPath);
         Environment.SetEnvironmentVariable("BackgroundJobs__AutoHeal__Enabled", "false");
         Environment.SetEnvironmentVariable("BackgroundJobs__SccmSnapshot__Enabled", "false");
+        Environment.SetEnvironmentVariable("BackgroundJobs__Automation__Enabled", "false");
         Environment.SetEnvironmentVariable("Monitoring__Retention__Enabled", "false");
         Environment.SetEnvironmentVariable("Monitoring__RateLimitPerMinute", "1000");
         Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", "Server=unused;Database=unused");

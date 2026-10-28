@@ -92,3 +92,50 @@ public sealed class RunbookParameterBinderTests
         Assert.False(b.Values.ContainsKey("Evil"));
     }
 }
+
+public sealed class RunbookOutputSanitizerTests
+{
+    [Theory]
+    [InlineData("password=Hunter2", "Hunter2")]
+    [InlineData("\"newPassword\": \"Gizli123!\"", "Gizli123!")]
+    [InlineData("api_key: abc-123", "abc-123")]
+    [InlineData("Parola=Deneme1", "Deneme1")]
+    public void PlainText_SecretsAreMasked(string text, string secret)
+        => Assert.DoesNotContain(secret, SystemPanel.Automation.RunbookOutputSanitizer.Sanitize(text, 4096));
+
+    [Fact]
+    public void Json_SensitiveFieldsAreMasked_OthersKept()
+    {
+        var output = SystemPanel.Automation.RunbookOutputSanitizer.Sanitize("{\"user\":\"ali\",\"lapsPassword\":\"x1\",\"items\":[{\"secret\":\"y2\",\"name\":\"n\"}]}", 4096);
+        Assert.DoesNotContain("x1", output);
+        Assert.DoesNotContain("y2", output);
+        Assert.Contains("ali", output);
+        Assert.Contains("\"name\"", output);
+    }
+
+    [Fact]
+    public void LongOutput_IsTruncated()
+    {
+        var output = SystemPanel.Automation.RunbookOutputSanitizer.Sanitize(new string('ş', 10_000), 1024);
+        Assert.True(System.Text.Encoding.UTF8.GetByteCount(output) <= 1024);
+        Assert.Contains("kısaltıldı", output);
+    }
+}
+
+public sealed class RunbookScriptHostArgumentsTests
+{
+    [Fact]
+    public void Arguments_UseFileAndSeparateValues()
+    {
+        var bound = new SystemPanel.Automation.BoundRunbookParameters(
+            new Dictionary<string, string> { ["UserDn"] = "CN=Ali; Remove-Item C:\\,DC=x" },
+            new[] { "Notify" },
+            Array.Empty<string>());
+
+        var args = SystemPanel.Automation.PowerShellRunbookScriptHost.BuildArguments("C:\\w\\s.ps1", bound, dryRun: true);
+
+        Assert.Equal(new[] { "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "C:\\w\\s.ps1",
+            "-UserDn", "CN=Ali; Remove-Item C:\\,DC=x", "-Notify", "-DryRun" }, args);
+        Assert.DoesNotContain("-Command", args);
+    }
+}

@@ -1,0 +1,26 @@
+@* Kullanım: <partial name="_Badges" model='("risk", "high")' /> veya ("status", "Succeeded") *@
+@model (string Kind, string Value)
+@{
+    var (css, text) = Model.Kind == "risk"
+        ? Model.Value switch
+        {
+            "low" => ("bg-success", "Düşük risk"),
+            "medium" => ("bg-warning text-dark", "Orta risk"),
+            _ => ("bg-danger", "Yüksek risk"),
+        }
+        : Model.Value switch
+        {
+            "PendingApproval" => ("bg-warning text-dark", "Onay bekliyor"),
+            "Approved" => ("bg-info text-dark", "Kuyrukta"),
+            "Running" => ("bg-primary", "Çalışıyor"),
+            "Succeeded" => ("bg-success", "Başarılı"),
+            "Failed" => ("bg-danger", "Başarısız"),
+            "TimedOut" => ("bg-danger", "Zaman aşımı"),
+            "Rejected" => ("bg-secondary", "Reddedildi"),
+            "Cancelled" => ("bg-secondary", "İptal edildi"),
+            "Expired" => ("bg-secondary", "Süresi doldu"),
+            "PreviewFailed" => ("bg-danger", "Önizleme başarısız"),
+            _ => ("bg-light text-dark", Model.Value),
+        };
+}
+<span class="badge @css">@text</span>

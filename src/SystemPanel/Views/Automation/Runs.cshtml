@@ -1,0 +1,48 @@
+@model IReadOnlyList<SystemPanel.Models.RunbookRun>
+@{
+    ViewData["Title"] = "Otomasyon çalıştırmaları";
+    var status = ViewBag.Status as string;
+    var statuses = new[] { "PendingApproval", "Approved", "Running", "Succeeded", "Failed", "TimedOut", "Rejected", "Cancelled", "Expired", "PreviewFailed" };
+}
+
+<div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+    <h2 class="fw-bold mb-0">Çalıştırmalar</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">Katalog</a>
+</div>
+<partial name="_StatusMessages" />
+
+<form method="get" asp-action="Runs" class="d-flex gap-2 mb-3" style="max-width: 360px">
+    <select name="status" class="form-select form-select-sm">
+        <option value="">Tüm durumlar</option>
+        @foreach (var s in statuses)
+        {
+            <option value="@s" selected="@(s == status)">@s</option>
+        }
+    </select>
+    <button class="btn btn-sm btn-outline-primary" type="submit">Filtrele</button>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>Talep (UTC)</th><th>Runbook</th><th>Hedef</th><th>Talep eden</th><th>Durum</th><th></th></tr>
+        </thead>
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="6" class="text-center text-muted py-4">Kayıt yok.</td></tr>
+            }
+            @foreach (var r in Model)
+            {
+                <tr>
+                    <td class="text-nowrap">@r.RequestedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@r.RunbookVersion?.Title <span class="text-muted small">v@(r.RunbookVersion?.Version)</span></td>
+                    <td class="small text-break">@r.TargetSummary</td>
+                    <td>@r.RequestedBy</td>
+                    <td><partial name="_Badges" model='("status", r.Status)' /></td>
+                    <td><a asp-action="Run" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Ayrıntı</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

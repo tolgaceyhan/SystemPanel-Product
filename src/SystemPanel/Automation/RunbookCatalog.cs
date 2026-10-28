@@ -134,6 +134,28 @@ namespace SystemPanel.Automation
                 .ToList();
         }
 
+        public Task<List<RunbookVersion>> ListAllAsync(CancellationToken ct = default)
+            => _db.RunbookVersions.AsNoTracking().OrderBy(v => v.RunbookId).ThenByDescending(v => v.ImportedAtUtc).ToListAsync(ct);
+
+        public async Task<bool> SetEnabledAsync(Guid versionId, bool enabled, CancellationToken ct = default)
+        {
+            var version = await _db.RunbookVersions.FirstOrDefaultAsync(v => v.Id == versionId, ct);
+            if (version == null)
+                return false;
+
+            version.IsEnabled = enabled;
+            await _db.SaveChangesAsync(ct);
+
+            await _audit.RecordAsync(new AuditRecord(AuditActions.AutomationRunbookDisable)
+            {
+                ResourceType = "Runbook",
+                ResourceId = version.RunbookId,
+                ResourceName = $"{version.RunbookId}@{version.Version}",
+                After = new { Enabled = enabled },
+            }, ct);
+            return true;
+        }
+
         public Task<RunbookVersion?> FindAsync(Guid versionId, CancellationToken ct = default)
             => _db.RunbookVersions.AsNoTracking().FirstOrDefaultAsync(v => v.Id == versionId, ct);
 

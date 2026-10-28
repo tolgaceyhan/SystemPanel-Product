@@ -66,6 +66,11 @@
             <li class="nav-item"><a class="nav-link text-white" asp-controller="Gpo" asp-action="Index"><i class="fas fa-cogs me-2"></i> GPO Yönetimi</a></li>
         }
 
+        @if (Has(Permissions.AutomationView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="Automation" asp-action="Index"><i class="fas fa-robot me-2"></i> Otomasyon</a></li>
+        }
+
         @if (Has(Permissions.SettingsView))
         {
             <li class="nav-item"><a class="nav-link text-white" asp-controller="License" asp-action="Index"><i class="fas fa-key me-2"></i> Lisans</a></li>

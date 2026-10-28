@@ -1,0 +1,97 @@
+@model List<SystemPanel.Models.RunbookVersion>
+@{
+    ViewData["Title"] = "Otomasyon kataloğu";
+    var keys = ViewBag.Keys as IReadOnlyList<SystemPanel.Automation.TrustedRunbookKey> ?? Array.Empty<SystemPanel.Automation.TrustedRunbookKey>();
+}
+
+<div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+    <h2 class="fw-bold mb-0">Katalog ve imzalama anahtarları</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">Katalog</a>
+</div>
+<partial name="_StatusMessages" />
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Runbook paketi içe aktar</h5>
+        <p class="small text-muted mb-2">Yalnızca güvenilen bir anahtarla imzalanmış paketler (.sprb) kabul edilir. Aynı sürüm farklı içerikle yüklenemez.</p>
+        <form asp-action="Import" method="post" enctype="multipart/form-data" class="d-flex gap-2" style="max-width: 640px">
+            @Html.AntiForgeryToken()
+            <input type="file" name="file" accept=".sprb" class="form-control" required />
+            <button type="submit" class="btn btn-primary">Yükle</button>
+        </form>
+    </div>
+</div>
+
+<h5>Runbook sürümleri</h5>
+<div class="table-responsive mb-4">
+    <table class="table table-sm align-middle">
+        <thead class="table-light"><tr><th>Runbook</th><th>Sürüm</th><th>Risk</th><th>İmzalayan anahtar</th><th>İçe aktarma</th><th>Durum</th><th></th></tr></thead>
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="7" class="text-center text-muted py-3">Katalog boş.</td></tr>
+            }
+            @foreach (var v in Model)
+            {
+                <tr>
+                    <td>@v.Title<br /><code class="small">@v.RunbookId</code></td>
+                    <td>@v.Version</td>
+                    <td><partial name="_Badges" model='("risk", v.Risk)' /></td>
+                    <td><code class="small" title="@v.KeyFingerprint">@v.KeyFingerprint[..16]…</code></td>
+                    <td class="small">@v.ImportedAtUtc.ToString("yyyy-MM-dd") · @v.ImportedBy</td>
+                    <td>@(v.IsEnabled ? "Etkin" : "Devre dışı")</td>
+                    <td>
+                        <form asp-action="SetEnabled" asp-route-versionId="@v.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="enabled" value="@(!v.IsEnabled)" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">@(v.IsEnabled ? "Devre dışı bırak" : "Etkinleştir")</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<h5>Güvenilen imzalama anahtarları</h5>
+<div class="table-responsive mb-3">
+    <table class="table table-sm align-middle">
+        <thead class="table-light"><tr><th>Ad</th><th>Parmak izi</th><th>Durum</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var k in keys)
+            {
+                <tr>
+                    <td>@k.Name</td>
+                    <td><code class="small">@k.Fingerprint</code></td>
+                    <td>@(k.IsRevoked ? "İptal edildi" : "Geçerli")</td>
+                    <td>
+                        @if (!k.IsBuiltIn && !k.IsRevoked && k.Id != null)
+                        {
+                            <form asp-action="RevokeKey" asp-route-id="@k.Id" method="post" onsubmit="return confirm('Anahtar iptal edilsin mi? Bu anahtarla imzalı runbook\'lar artık çalıştırılamaz.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">İptal et</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (keys.Count == 0)
+            {
+                <tr><td colspan="4" class="text-center text-muted py-3">Kayıtlı anahtar yok.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Kurum imzalama anahtarı ekle</h5>
+        <p class="small text-muted">Kurumunuzun kendi runbook'larını imzaladığı ECDSA P-256 <strong>açık</strong> anahtarı (PEM). Özel anahtarı buraya yapıştırmayın.</p>
+        <form asp-action="AddKey" method="post" style="max-width: 760px">
+            @Html.AntiForgeryToken()
+            <input name="name" class="form-control mb-2" maxlength="100" placeholder="Ad (ör. BT Otomasyon 2026)" required />
+            <textarea name="publicKeyPem" class="form-control mb-2 font-monospace small" rows="5" placeholder="-----BEGIN PUBLIC KEY-----" required></textarea>
+            <button type="submit" class="btn btn-primary">Ekle</button>
+        </form>
+    </div>
+</div>

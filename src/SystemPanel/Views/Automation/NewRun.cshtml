@@ -1,0 +1,109 @@
+@model SystemPanel.Controllers.RunbookRequestViewModel
+@using SystemPanel.Contracts.Automation
+@{
+    ViewData["Title"] = "Çalıştırma talebi";
+    var m = Model.Manifest;
+}
+
+<h2 class="fw-bold mt-2 mb-1">@Model.Version.Title</h2>
+<div class="text-muted mb-3"><code>@Model.Version.RunbookId</code> · v@(Model.Version.Version) · <partial name="_Badges" model='("risk", Model.Version.Risk)' /></div>
+
+@if (m == null)
+{
+    <div class="alert alert-danger">Bu runbook doğrulanamadı ve çalıştırılamaz: @Model.VerificationError</div>
+    return;
+}
+
+@if (!string.IsNullOrWhiteSpace(m.Description))
+{
+    <p>@m.Description</p>
+}
+
+@if (Model.Errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var e in Model.Errors) { <li>@e</li> }
+        </ul>
+    </div>
+}
+
+<form asp-action="NewRun" asp-route-versionId="@Model.Version.Id" method="post" class="card card-body shadow-sm" style="max-width: 760px">
+    @Html.AntiForgeryToken()
+
+    @foreach (var p in m.Parameters)
+    {
+        var id = "p_" + p.Name;
+        var name = "p." + p.Name;
+        Model.Values.TryGetValue(p.Name, out var current);
+        current ??= p.Default;
+        var label = string.IsNullOrWhiteSpace(p.Label) ? p.Name : p.Label;
+
+        <div class="mb-3">
+            @if (p.Type == RunbookParameterTypes.Bool)
+            {
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="@id" name="@name" value="true" checked="@(string.Equals(current, "true", StringComparison.OrdinalIgnoreCase))" />
+                    <label class="form-check-label" for="@id">@label</label>
+                </div>
+            }
+            else
+            {
+                <label class="form-label fw-bold" for="@id">@label @(p.Required ? "*" : "")</label>
+                @if (p.Type == RunbookParameterTypes.Enum)
+                {
+                    <select class="form-select" id="@id" name="@name">
+                        @if (!p.Required) { <option value=""></option> }
+                        @foreach (var v in p.Values)
+                        {
+                            <option value="@v" selected="@(v == current)">@v</option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    <input class="form-control" id="@id" name="@name" value="@current" autocomplete="off"
+                           type="@(p.Type == RunbookParameterTypes.Int ? "number" : "text")"
+                           min="@p.Min" max="@p.Max" maxlength="@(p.Type == RunbookParameterTypes.String ? (p.MaxLength ?? 256) : 1024)" />
+                }
+            }
+            @if (!string.IsNullOrWhiteSpace(p.Help))
+            {
+                <div class="form-text">@p.Help</div>
+            }
+            @if (p.Type == RunbookParameterTypes.AdDn && p.InScope)
+            {
+                <div class="form-text">Yetki kapsamınızdaki bir AD nesnesinin ayırt edici adı (DN).</div>
+            }
+        </div>
+    }
+
+    @if (m.Risk != RunbookRisks.Low)
+    {
+        <div class="mb-3">
+            <label class="form-label fw-bold" for="justification">Gerekçe *</label>
+            <textarea class="form-control" id="justification" name="justification" rows="2" maxlength="500">@Model.Justification</textarea>
+            <div class="form-text">Onaylayan kişi ve denetim kaydı için. Örn. talep/iş kaydı numarası.</div>
+        </div>
+    }
+
+    <div class="alert alert-secondary small">
+        @if (m.SupportsDryRun)
+        {
+            <span>Talep gönderildiğinde önce <strong>değişiklik yapmadan önizleme</strong> alınır.</span>
+        }
+        @if (m.Risk == RunbookRisks.Low)
+        {
+            <span>Düşük riskli: onay gerekmeden kuyruğa alınır.</span>
+        }
+        else
+        {
+            <span>Çalışması için <strong>başka bir yetkilinin onayı</strong> gerekir.</span>
+        }
+    </div>
+
+    <div>
+        <button type="submit" class="btn btn-primary">Talebi gönder</button>
+        <a asp-action="Index" class="btn btn-link">Vazgeç</a>
+    </div>
+</form>

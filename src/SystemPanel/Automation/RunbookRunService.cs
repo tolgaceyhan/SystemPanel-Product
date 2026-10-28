@@ -422,6 +422,94 @@ namespace SystemPanel.Automation
                     .SetProperty(r => r.FinishedAtUtc, Now)
                     .SetProperty(r => r.Error, "Uygulama yeniden başladığında çalışma yarıda kaldı; sonuç bilinmiyor. Hedefi kontrol edin."), ct);
 
+        // ------------------------------------------------------------------ Görünürlük
+        /// <summary>
+        /// Çalıştırma kayıtları hedef DN'leri içerir; başka birimlerin bilgisini sızdırmamak için:
+        /// global kapsam → tümü; aksi halde kendi talepleri, karar verdikleri ve hedefi kapsamındaki talepler.
+        /// </summary>
+        public async Task<bool> CanViewAsync(ClaimsPrincipal user, RunbookRun run, CancellationToken ct = default)
+        {
+            var name = UserName(user);
+            if (name == null)
+                return false;
+
+            var scope = await _scopes.ResolveAsync(user, ct);
+            if (scope.IsGlobal)
+                return true;
+            if (string.Equals(run.RequestedBy, name, StringComparison.OrdinalIgnoreCase) ||
+                run.Approvals.Any(a => string.Equals(a.Approver, name, StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+            return await TargetsInScopeAsync(run, scope, new Dictionary<Guid, RunbookManifest?>(), ct);
+        }
+
+        public async Task<IReadOnlyList<RunbookRun>> ListVisibleAsync(ClaimsPrincipal user, string? status, int take = 200, CancellationToken ct = default)
+        {
+            var query = _db.RunbookRuns.AsNoTracking()
+                .Include(r => r.RunbookVersion)
+                .Include(r => r.Approvals)
+                .OrderByDescending(r => r.RequestedAtUtc)
+                .AsQueryable();
+            if (!string.IsNullOrWhiteSpace(status))
+                query = query.Where(r => r.Status == status);
+
+            var candidates = await query.Take(Math.Clamp(take, 1, 500) * 3).ToListAsync(ct);
+            var scope = await _scopes.ResolveAsync(user, ct);
+            if (scope.IsGlobal)
+                return candidates.Take(take).ToList();
+
+            var name = UserName(user);
+            var manifests = new Dictionary<Guid, RunbookManifest?>();
+            var visible = new List<RunbookRun>();
+            foreach (var run in candidates)
+            {
+                if (visible.Count >= take)
+                    break;
+                if (string.Equals(run.RequestedBy, name, StringComparison.OrdinalIgnoreCase) ||
+                    run.Approvals.Any(a => string.Equals(a.Approver, name, StringComparison.OrdinalIgnoreCase)) ||
+                    await TargetsInScopeAsync(run, scope, manifests, ct))
+                    visible.Add(run);
+            }
+            return visible;
+        }
+
+        /// <summary>Kullanıcının karar verebileceği bekleyen talepler (kendi talepleri hariç).</summary>
+        public async Task<IReadOnlyList<RunbookRun>> ListAwaitingDecisionAsync(ClaimsPrincipal user, CancellationToken ct = default)
+        {
+            var name = UserName(user);
+            if (name == null || !await _permissions.HasPermissionAsync(user, Permissions.AutomationApprove, ct))
+                return Array.Empty<RunbookRun>();
+
+            var pending = await ListVisibleAsync(user, RunbookRunStatus.PendingApproval, 200, ct);
+            return pending
+                .Where(r => !string.Equals(r.RequestedBy, name, StringComparison.OrdinalIgnoreCase) &&
+                            !r.Approvals.Any(a => string.Equals(a.Approver, name, StringComparison.OrdinalIgnoreCase)) &&
+                            (r.ApprovalExpiresAtUtc == null || r.ApprovalExpiresAtUtc > Now))
+                .ToList();
+        }
+
+        private async Task<bool> TargetsInScopeAsync(RunbookRun run, OrganizationalScope scope, Dictionary<Guid, RunbookManifest?> cache, CancellationToken ct)
+        {
+            if (scope.IsEmpty)
+                return false;
+
+            if (!cache.TryGetValue(run.RunbookVersionId, out var manifest))
+            {
+                var version = run.RunbookVersion ?? await _db.RunbookVersions.AsNoTracking().FirstOrDefaultAsync(v => v.Id == run.RunbookVersionId, ct);
+                manifest = version == null ? null : (await _catalog.VerifyAsync(version, ct)).Package?.Manifest;
+                cache[run.RunbookVersionId] = manifest;
+            }
+
+            if (manifest == null)
+                return false;
+
+            // Hedefsiz (ad-dn parametresi olmayan) runbook'ların kayıtları yalnızca ilgililere görünür.
+            if (!manifest.Parameters.Any(p => p.Type == RunbookParameterTypes.AdDn && p.InScope))
+                return false;
+
+            return RunbookParameterBinder.Bind(manifest, ToInput(run.ParametersJson), scope).IsValid;
+        }
+
         // ------------------------------------------------------------------ Yardımcılar
         public Task<RunbookRun?> LoadAsync(Guid runId, CancellationToken ct = default)
             => _db.RunbookRuns

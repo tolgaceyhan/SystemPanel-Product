@@ -76,6 +76,8 @@ Ayarlar (`Automation:*`):
 | `WorkDirectory` | `%ProgramData%\SystemPanel\Automation\work` | |
 | `MaxOutputBytes` | 65536 | Saklanan çıktı sınırı |
 | `PollSeconds` | 5 | Kuyruk kontrol aralığı |
+| `ScheduleTimeZone` | Sunucunun yerel saati | Cron ifadelerinin saat dilimi (ör. `Turkey Standard Time` veya `Europe/Istanbul`) |
+| `MinScheduleIntervalMinutes` | 5 | Zamanlamalar için izin verilen en kısa tetikleme aralığı |
 
 Kuyruğu kapatmak için: `BackgroundJobs:Automation:Enabled=false`. Talepler oluşturulur ama çalıştırılmaz.
 
@@ -159,8 +161,37 @@ Agent düşük yetkili `NT SERVICE\SystemPanelAgent` hesabıyla çalışır ve *
 
 Agent'ı `LocalSystem` olarak çalıştırmak tüm runbook'lara tam yetki verir. **Önerilmez.**
 
+## Zamanlamalar ve alarm tetikleyicileri (Faz 3)
+
+Katalogdaki runbook kartında **Zamanla** düğmesine basın (`automation.manage` gerekir). Zamanlama, runbook sürümünü ve parametre kümesini **sabitler**. Değiştirmek için yeni zamanlama oluşturulur, eskisi devre dışı bırakılır.
+
+**Tetikleyici türleri**
+- **Zaman (cron):** 5 alanlı cron ifadesi. Örnekler:
+  - `0 3 * * *` her gün 03:00
+  - `30 8 * * MON-FRI` hafta içi 08:30
+  - `*/30 * * * *` her 30 dakika
+  
+  İfade `Automation:ScheduleTimeZone` saat dilimine göre değerlendirilir.
+- **Alarm:** Hedef sunucunun agent'ı CPU, RAM veya disk eşiğini aştığında (izleme eşikleri, `Monitoring:Thresholds`) tetiklenir. Disk için isteğe bağlı sürücü verilebilir (`C:`). Yalnızca agent runbook'larıyla kullanılır ve alarmı veren sunucuda çalışır.
+
+**Onay ve otomatik çalışma**
+
+| Risk | Zamanlamanın etkinleşmesi | Cron tetiklemesi | Alarm tetiklemesi |
+|---|---|---|---|
+| Düşük | Hemen | Onaysız çalışır | Agent runbook'u: onaysız çalışır |
+| Orta | Başka bir yetkilinin onayı (dört göz) | Onaysız çalışır (önceden onaylı parametre kümesi) | Her seferinde onay talebi oluşturur |
+| Yüksek | Başka bir yetkilinin onayı (dört göz) | Her çalıştırma ayrıca onay ister (önizlemeyle) | Her seferinde onay talebi oluşturur |
+
+**Korumalar**
+- Önceki çalıştırma sonuçlanmadan yeni tetikleme yapılmaz.
+- İki tetikleme arasında en az "en kısa tetikleme aralığı" kadar süre geçer.
+- Atlanan tetiklemeler zamanlamanın "Son durum" alanında görünür.
+- Zamanlamanın oluşturduğu çalıştırmalar zamanlamayı **oluşturan kişiye** yazılır. Bu kişi o çalıştırmaları kendisi onaylayamaz.
+- Her tetiklemede paketin imzası ve güven durumu yeniden doğrulanır. Anahtar iptal edildiyse tetikleme başarısız olur ve kaydedilir.
+- Parametreler ve hedef, zamanlama oluşturulurken oluşturanın kapsamıyla, onaylanırken onaylayanın kapsamıyla doğrulanır. Kullanıcının yetkisi sonradan değişirse zamanlamayı **devre dışı bırakın**. Otomasyon yöneticileri tüm zamanlamaları devre dışı bırakabilir.
+- Audit eylemleri: `automation.schedule.create`, `.approve`, `.reject`, `.disable`, `.fired`.
+
 ## Sınırlar ve sonraki adımlar
 
-- Zamanlama ve olay tetikleyicileri yok (Faz 3).
 - Sunucu tarafında ve her agent'ta aynı anda tek iş çalışıyor.
 - Yeniden deneme yok. Başarısız işi yeni talep olarak başlatın.

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Durum | Kabul edildi. Faz 1 (MVP) ve Faz 2 (agent) uygulandı; kılavuz: [AUTOMATION.md](../AUTOMATION.md) |
+| Durum | Kabul edildi. Faz 1 (MVP), Faz 2 (agent) ve Faz 3 (zamanlama/alarm) uygulandı; kılavuz: [AUTOMATION.md](../AUTOMATION.md) |
 | Tarih | 2026-10-28 |
 | Kapsam | SystemPanel web, Agent, Contracts |
 

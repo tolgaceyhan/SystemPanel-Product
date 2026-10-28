@@ -1,0 +1,76 @@
+@* Runbook girdileri: hedef sunucu (agent runbook'ları) ve parametre alanları. Talep ve zamanlama formları ortak kullanır. *@
+@model SystemPanel.Controllers.RunbookRequestViewModel
+@using SystemPanel.Contracts.Automation
+@{
+    var m = Model.Manifest!;
+}
+    @if (m.Executor == RunbookExecutors.Agent)
+    {
+        <div class="mb-3">
+            <label class="form-label fw-bold" for="targetAgentId">Hedef sunucu *</label>
+            @if (Model.TargetAgents.Count == 0)
+            {
+                <div class="alert alert-warning mb-0">Yetki kapsamınızda kayıtlı ve etkin bir agent yok.</div>
+            }
+            else
+            {
+                <select class="form-select" id="targetAgentId" name="targetAgentId" required>
+                    <option value=""></option>
+                    @foreach (var a in Model.TargetAgents)
+                    {
+                        <option value="@a.Id" selected="@(a.Id == Model.TargetAgentId)">@a.Hostname @(string.IsNullOrWhiteSpace(a.Province) ? "" : $"({a.Province})")</option>
+                    }
+                </select>
+                <div class="form-text">İş, seçilen sunucudaki agent tarafından alınıp çalıştırılır. Agent'ta otomasyon açık ve bu runbook izin listesinde olmalıdır.</div>
+            }
+        </div>
+    }
+
+    @foreach (var p in m.Parameters)
+    {
+        var id = "p_" + p.Name;
+        var name = "p." + p.Name;
+        Model.Values.TryGetValue(p.Name, out var current);
+        current ??= p.Default;
+        var label = string.IsNullOrWhiteSpace(p.Label) ? p.Name : p.Label;
+
+        <div class="mb-3">
+            @if (p.Type == RunbookParameterTypes.Bool)
+            {
+                <div class="form-check">
+                    @* İşaretsiz kutu gönderilmez; gizli "false" değeri varsayılanın (ör. true) uygulanmasını önler. Son değer kazanır. *@
+                    <input type="hidden" name="@name" value="false" />
+                    <input class="form-check-input" type="checkbox" id="@id" name="@name" value="true" checked="@(string.Equals(current, "true", StringComparison.OrdinalIgnoreCase))" />
+                    <label class="form-check-label" for="@id">@label</label>
+                </div>
+            }
+            else
+            {
+                <label class="form-label fw-bold" for="@id">@label @(p.Required ? "*" : "")</label>
+                @if (p.Type == RunbookParameterTypes.Enum)
+                {
+                    <select class="form-select" id="@id" name="@name">
+                        @if (!p.Required) { <option value=""></option> }
+                        @foreach (var v in p.Values)
+                        {
+                            <option value="@v" selected="@(v == current)">@v</option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    <input class="form-control" id="@id" name="@name" value="@current" autocomplete="off"
+                           type="@(p.Type == RunbookParameterTypes.Int ? "number" : "text")"
+                           min="@p.Min" max="@p.Max" maxlength="@(p.Type == RunbookParameterTypes.String ? (p.MaxLength ?? 256) : 1024)" />
+                }
+            }
+            @if (!string.IsNullOrWhiteSpace(p.Help))
+            {
+                <div class="form-text">@p.Help</div>
+            }
+            @if (p.Type == RunbookParameterTypes.AdDn && p.InScope)
+            {
+                <div class="form-text">Yetki kapsamınızdaki bir AD nesnesinin ayırt edici adı (DN).</div>
+            }
+        </div>
+    }

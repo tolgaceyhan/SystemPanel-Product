@@ -26,12 +26,14 @@ namespace SystemPanel.Controllers
         private readonly RunbookCatalog _catalog;
         private readonly RunbookRunService _runs;
         private readonly RunbookTrustStore _trust;
+        private readonly RunbookScheduleService _schedules;
 
-        public AutomationController(RunbookCatalog catalog, RunbookRunService runs, RunbookTrustStore trust)
+        public AutomationController(RunbookCatalog catalog, RunbookRunService runs, RunbookTrustStore trust, RunbookScheduleService schedules)
         {
             _catalog = catalog;
             _runs = runs;
             _trust = trust;
+            _schedules = schedules;
         }
 
         // ------------------------------------------------------------------ Katalog
@@ -158,6 +160,100 @@ namespace SystemPanel.Controllers
             return RedirectToAction(nameof(Run), new { id });
         }
 
+        // ------------------------------------------------------------------ Zamanlamalar (ADR-002 §5)
+        [HttpGet("schedules")]
+        public async Task<IActionResult> Schedules(CancellationToken ct)
+            => View(await _schedules.ListVisibleAsync(User, ct));
+
+        [HttpGet("runbooks/{versionId:guid}/schedule")]
+        [RequirePermission(Permissions.AutomationManage)]
+        public async Task<IActionResult> NewSchedule(Guid versionId, CancellationToken ct)
+        {
+            var request = await BuildRequestModelAsync(versionId, ct);
+            return request == null ? NotFound() : View(new ScheduleFormViewModel { Request = request });
+        }
+
+        [HttpPost("runbooks/{versionId:guid}/schedule")]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(Permissions.AutomationManage)]
+        public async Task<IActionResult> NewSchedule(Guid versionId, ScheduleFormViewModel form, Guid? targetAgentId, string? justification, CancellationToken ct)
+        {
+            var request = await BuildRequestModelAsync(versionId, ct);
+            if (request == null)
+                return NotFound();
+
+            var input = Request.Form
+                .Where(kv => kv.Key.StartsWith(ParameterPrefix, StringComparison.Ordinal))
+                .ToDictionary(kv => kv.Key[ParameterPrefix.Length..], kv => (string?)kv.Value.LastOrDefault(), StringComparer.Ordinal);
+
+            var result = await _schedules.CreateAsync(User, new ScheduleRequest
+            {
+                Name = form.Name ?? string.Empty,
+                VersionId = versionId,
+                Input = input,
+                TargetAgentId = targetAgentId,
+                TriggerType = form.TriggerType ?? string.Empty,
+                CronExpression = form.CronExpression,
+                AlarmMetric = form.AlarmMetric,
+                AlarmDrive = form.AlarmDrive,
+                MinIntervalMinutes = form.MinIntervalMinutes,
+                Justification = justification,
+            }, ct);
+
+            if (!result.Success)
+            {
+                request.Values = input;
+                request.Justification = justification;
+                request.TargetAgentId = targetAgentId;
+                request.Errors = result.ValidationErrors?.ToList() ?? new List<string>();
+                if (result.Error != null && request.Errors.Count == 0)
+                    request.Errors.Add(result.Error);
+                form.Request = request;
+                return View(form);
+            }
+
+            TempData["Success"] = result.Schedule!.Status == RunbookScheduleStatus.Active
+                ? "Zamanlama oluşturuldu ve etkin."
+                : "Zamanlama oluşturuldu; etkin olması için başka bir yetkilinin onayı gerekiyor.";
+            return RedirectToAction(nameof(Schedule), new { id = result.Schedule.Id });
+        }
+
+        [HttpGet("schedules/{id:guid}")]
+        public async Task<IActionResult> Schedule(Guid id, CancellationToken ct)
+        {
+            var schedule = await _schedules.FindVisibleAsync(User, id, ct);
+            if (schedule == null)
+                return NotFound();
+
+            ViewBag.Parameters = RunbookRunService.DescribeParameters(schedule.ParametersJson);
+            ViewBag.Runs = (await _runs.ListVisibleAsync(User, null, 500, ct)).Where(r => r.ScheduleId == id).Take(20).ToList();
+            return View(schedule);
+        }
+
+        [HttpPost("schedules/{id:guid}/approve")]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(Permissions.AutomationApprove)]
+        public async Task<IActionResult> ApproveSchedule(Guid id, CancellationToken ct)
+            => ScheduleDecided(id, await _schedules.ApproveAsync(User, id, ct), "Zamanlama onaylandı ve etkinleşti.");
+
+        [HttpPost("schedules/{id:guid}/reject")]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(Permissions.AutomationApprove)]
+        public async Task<IActionResult> RejectSchedule(Guid id, CancellationToken ct)
+            => ScheduleDecided(id, await _schedules.RejectAsync(User, id, ct), "Zamanlama reddedildi.");
+
+        [HttpPost("schedules/{id:guid}/disable")]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(Permissions.AutomationManage)]
+        public async Task<IActionResult> DisableSchedule(Guid id, CancellationToken ct)
+            => ScheduleDecided(id, await _schedules.DisableAsync(User, id, ct), "Zamanlama devre dışı bırakıldı.");
+
+        private IActionResult ScheduleDecided(Guid id, ScheduleOperationResult result, string success)
+        {
+            TempData[result.Success ? "Success" : "Error"] = result.Success ? success : result.Error;
+            return RedirectToAction(nameof(Schedule), new { id });
+        }
+
         // ------------------------------------------------------------------ Yönetim
         [HttpGet("manage")]
         [RequirePermission(Permissions.AutomationManage)]
@@ -220,6 +316,17 @@ namespace SystemPanel.Controllers
             TempData[ok ? "Success" : "Error"] = ok ? "Anahtar iptal edildi; bu anahtarla imzalı runbook'lar artık çalıştırılamaz." : "Anahtar bulunamadı.";
             return RedirectToAction(nameof(Manage));
         }
+    }
+
+    public sealed class ScheduleFormViewModel
+    {
+        public RunbookRequestViewModel Request { get; set; } = null!;
+        public string? Name { get; set; }
+        public string? TriggerType { get; set; } = RunbookTriggerTypes.Cron;
+        public string? CronExpression { get; set; } = "0 3 * * *";
+        public string? AlarmMetric { get; set; }
+        public string? AlarmDrive { get; set; }
+        public int MinIntervalMinutes { get; set; } = 60;
     }
 
     public sealed class RunbookRequestViewModel

@@ -1,0 +1,12 @@
+@model string
+@{
+    var (css, text) = Model switch
+    {
+        "Active" => ("bg-success", "Etkin"),
+        "PendingApproval" => ("bg-warning text-dark", "Onay bekliyor"),
+        "Rejected" => ("bg-secondary", "Reddedildi"),
+        "Disabled" => ("bg-secondary", "Devre dışı"),
+        _ => ("bg-light text-dark", Model),
+    };
+}
+<span class="badge @css">@text</span>

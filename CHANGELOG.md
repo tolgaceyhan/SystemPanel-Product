@@ -34,6 +34,14 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
   - Üç agent runbook'u: servis yeniden başlatma, Windows Temp temizliği, tanılama özeti.
   - Agent kurulum betiğine `-AllowedRunbooks` ve `-TrustedRunbookKeyFiles` parametreleri eklendi.
   - Ortak runbook çalışma zamanı `SystemPanel.Contracts` projesine taşındı.
+- **Otomasyon — ADR-002 Faz 3 (zamanlama ve alarm tetikleyicileri):**
+  - Tetikleyiciler: cron (saat dilimi ayarlanabilir) ve alarm (CPU/RAM/disk eşiği; sunucu, metrik ve sürücü eşleşmesi).
+  - Orta/yüksek riskli zamanlamalar dört göz onayıyla etkinleşir.
+  - Tetikleme politikası riske göre değişir: yüksek risk her çalıştırmada onay ister; alarmla otomatik çalışma yalnızca düşük riskli agent runbook'larında var.
+  - Üst üste binme ve en kısa aralık korumaları; çalıştırmalar zamanlamayı oluşturan kişiye yazılır.
+  - Metrik alımı alarmları otomasyona sınırlı ve kayıplı bir kuyrukla iletir; alım hattı bundan etkilenmez.
+  - Ekranlar: zamanlama listesi, oluşturma formu, ayrıntı/onay/devre dışı bırakma.
+  - Bağımlılıksız cron ayrıştırıcı eklendi.
 - **Lisans:** çevrimdışı imzalı lisans dosyası (ECDSA P-256), lisans ekranı, agent sınırı; lisans sorunu mevcut işlemleri durdurmaz.
 - **Marka:** ürün adı ve logolar yapılandırılabilir (`Branding`).
 - **Organizasyon yapısı:** birim etiketi yapılandırılabilir (`Organization:UnitLabel`; il, bölge, şube...). Türkiye il haritası opsiyonel modül (`Organization:Map:Enabled`, varsayılan kapalı).

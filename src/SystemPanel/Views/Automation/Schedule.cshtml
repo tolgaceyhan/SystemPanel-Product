@@ -1,0 +1,107 @@
+@model SystemPanel.Models.RunbookSchedule
+@inject IPermissionService PermissionService
+@{
+    ViewData["Title"] = "Zamanlama";
+    var parameters = ViewBag.Parameters as IReadOnlyDictionary<string, string?> ?? new Dictionary<string, string?>();
+    var runs = ViewBag.Runs as IReadOnlyList<SystemPanel.Models.RunbookRun> ?? Array.Empty<SystemPanel.Models.RunbookRun>();
+    var me = User.Identity?.Name;
+    var canApprove = Model.Status == "PendingApproval"
+        && !string.Equals(Model.CreatedBy, me, StringComparison.OrdinalIgnoreCase)
+        && await PermissionService.HasAnyPermissionAsync(User, Permissions.AutomationApprove);
+    var canDisable = Model.Status is "Active" or "PendingApproval"
+        && await PermissionService.HasAnyPermissionAsync(User, Permissions.AutomationManage);
+}
+
+<div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+    <h2 class="fw-bold mb-0">@Model.Name</h2>
+    <a asp-action="Schedules" class="btn btn-outline-secondary">Zamanlamalar</a>
+</div>
+<partial name="_StatusMessages" />
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Durum</dt><dd class="col-sm-9"><partial name="_ScheduleBadge" model="Model.Status" /></dd>
+            <dt class="col-sm-3">Runbook</dt><dd class="col-sm-9"><code>@Model.RunbookVersion?.RunbookId</code> v@(Model.RunbookVersion?.Version) <partial name="_Badges" model='("risk", Model.RunbookVersion?.Risk ?? "high")' /></dd>
+            <dt class="col-sm-3">Tetikleyici</dt>
+            <dd class="col-sm-9">
+                @if (Model.TriggerType == "cron")
+                {
+                    <code>@Model.CronExpression</code> <span class="text-muted small">· sonraki: @(Model.NextFireAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "-") UTC</span>
+                }
+                else
+                {
+                    <span>Alarm: @Model.AlarmMetric?.ToUpperInvariant() @Model.AlarmDrive</span>
+                }
+                <span class="text-muted small">· en kısa aralık @Model.MinIntervalMinutes dk</span>
+            </dd>
+            @if (!string.IsNullOrWhiteSpace(Model.TargetSummary))
+            {
+                <dt class="col-sm-3">Hedef</dt><dd class="col-sm-9 text-break">@Model.TargetSummary</dd>
+            }
+            <dt class="col-sm-3">Oluşturan</dt><dd class="col-sm-9">@Model.CreatedBy · @Model.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            <dt class="col-sm-3">Gerekçe</dt><dd class="col-sm-9">@Model.Justification</dd>
+            @if (Model.DecidedBy != null)
+            {
+                <dt class="col-sm-3">Karar</dt><dd class="col-sm-9">@Model.DecidedBy · @Model.DecidedAtUtc?.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            }
+            @if (Model.DisabledBy != null)
+            {
+                <dt class="col-sm-3">Devre dışı</dt><dd class="col-sm-9">@Model.DisabledBy · @Model.DisabledAtUtc?.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            }
+            @if (Model.LastMessage != null)
+            {
+                <dt class="col-sm-3">Son durum</dt><dd class="col-sm-9">@Model.LastMessage</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+<h5>Parametreler</h5>
+<table class="table table-sm w-auto">
+    @foreach (var (k, v) in parameters)
+    {
+        <tr><th class="pe-4">@k</th><td class="text-break">@v</td></tr>
+    }
+</table>
+
+<div class="d-flex gap-2 mb-4">
+    @if (canApprove)
+    {
+        <form method="post" asp-action="ApproveSchedule" asp-route-id="@Model.Id">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success">Zamanlamayı onayla</button>
+        </form>
+        <form method="post" asp-action="RejectSchedule" asp-route-id="@Model.Id">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger">Reddet</button>
+        </form>
+    }
+    @if (canDisable)
+    {
+        <form method="post" asp-action="DisableSchedule" asp-route-id="@Model.Id" onsubmit="return confirm('Zamanlama devre dışı bırakılsın mı? Yeniden etkinleştirmek için yeni zamanlama oluşturulur.');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-secondary">Devre dışı bırak</button>
+        </form>
+    }
+</div>
+
+<h5>Son çalıştırmalar</h5>
+<table class="table table-sm align-middle">
+    <thead class="table-light"><tr><th>Talep (UTC)</th><th>Gerekçe</th><th>Durum</th><th></th></tr></thead>
+    <tbody>
+        @if (runs.Count == 0)
+        {
+            <tr><td colspan="4" class="text-center text-muted py-3">Henüz çalıştırma yok.</td></tr>
+        }
+        @foreach (var run in runs)
+        {
+            <tr>
+                <td class="text-nowrap">@run.RequestedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                <td class="small">@run.Justification</td>
+                <td><partial name="_Badges" model='("status", run.Status)' /></td>
+                <td><a asp-action="Run" asp-route-id="@run.Id" class="btn btn-sm btn-outline-secondary">Ayrıntı</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

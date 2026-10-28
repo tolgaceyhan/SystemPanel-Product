@@ -15,6 +15,7 @@
             <a asp-action="Approvals" class="btn btn-warning">Onayınızı bekleyen: @awaiting</a>
         }
         <a asp-action="Runs" class="btn btn-outline-secondary">Çalıştırmalar</a>
+        <a asp-action="Schedules" class="btn btn-outline-secondary">Zamanlamalar</a>
         @if (canManage)
         {
             <a asp-action="Manage" class="btn btn-outline-secondary">Katalog ve anahtarlar</a>
@@ -49,6 +50,10 @@ else
                         @if (canRun)
                         {
                             <a asp-action="NewRun" asp-route-versionId="@rb.Id" class="btn btn-primary btn-sm align-self-start">Çalıştırma talebi</a>
+                        }
+                        @if (canManage)
+                        {
+                            <a asp-action="NewSchedule" asp-route-versionId="@rb.Id" class="btn btn-outline-primary btn-sm align-self-start mt-2">Zamanla</a>
                         }
                     </div>
                 </div>

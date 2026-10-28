@@ -1,0 +1,98 @@
+@model SystemPanel.Controllers.ScheduleFormViewModel
+@using SystemPanel.Contracts.Automation
+@{
+    ViewData["Title"] = "Zamanlama oluştur";
+    var r = Model.Request;
+    var m = r.Manifest;
+    var isAgent = m?.Executor == RunbookExecutors.Agent;
+}
+
+<h2 class="fw-bold mt-2 mb-1">Zamanla: @r.Version.Title</h2>
+<div class="text-muted mb-3"><code>@r.Version.RunbookId</code> · v@(r.Version.Version) · <partial name="_Badges" model='("risk", r.Version.Risk)' /></div>
+
+@if (m == null)
+{
+    <div class="alert alert-danger">Bu runbook doğrulanamadı: @r.VerificationError</div>
+    return;
+}
+
+@if (r.Errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var e in r.Errors) { <li>@e</li> }
+        </ul>
+    </div>
+}
+
+<form asp-action="NewSchedule" asp-route-versionId="@r.Version.Id" method="post" class="card card-body shadow-sm" style="max-width: 760px">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label fw-bold" for="Name">Zamanlama adı *</label>
+        <input class="form-control" id="Name" name="Name" value="@Model.Name" maxlength="100" required />
+    </div>
+
+    <fieldset class="mb-3">
+        <legend class="form-label fw-bold fs-6">Tetikleyici</legend>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="TriggerType" id="tt_cron" value="cron" checked="@(Model.TriggerType != "alarm")" />
+            <label class="form-check-label" for="tt_cron">Zaman (cron)</label>
+        </div>
+        <div class="ms-4 mb-2">
+            <input class="form-control font-monospace" name="CronExpression" value="@Model.CronExpression" maxlength="100" style="max-width: 260px" />
+            <div class="form-text">dakika saat gün ay haftanın-günü. Örn. <code>0 3 * * *</code> (her gün 03:00), <code>30 8 * * MON-FRI</code>, <code>*/30 * * * *</code>.</div>
+        </div>
+        @if (isAgent)
+        {
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="TriggerType" id="tt_alarm" value="alarm" checked="@(Model.TriggerType == "alarm")" />
+                <label class="form-check-label" for="tt_alarm">Alarm (hedef sunucuda eşik aşıldığında)</label>
+            </div>
+            <div class="ms-4 d-flex gap-2 align-items-center">
+                <select class="form-select" name="AlarmMetric" style="max-width: 160px">
+                    <option value=""></option>
+                    @foreach (var (v, t) in new[] { ("cpu", "CPU"), ("ram", "Bellek"), ("disk", "Disk") })
+                    {
+                        <option value="@v" selected="@(v == Model.AlarmMetric)">@t</option>
+                    }
+                </select>
+                <input class="form-control" name="AlarmDrive" value="@Model.AlarmDrive" placeholder="Sürücü (ör. C:)" maxlength="2" style="max-width: 160px" />
+            </div>
+        }
+    </fieldset>
+
+    <div class="mb-3">
+        <label class="form-label fw-bold" for="MinIntervalMinutes">En kısa tetikleme aralığı (dakika)</label>
+        <input class="form-control" type="number" id="MinIntervalMinutes" name="MinIntervalMinutes" value="@Model.MinIntervalMinutes" min="5" max="10080" style="max-width: 160px" />
+        <div class="form-text">Önceki çalıştırma bitmeden yeni tetikleme yapılmaz.</div>
+    </div>
+
+    <hr />
+    <partial name="_RunbookInputs" model="r" />
+
+    <div class="mb-3">
+        <label class="form-label fw-bold" for="justification">Gerekçe *</label>
+        <textarea class="form-control" id="justification" name="justification" rows="2" maxlength="500">@r.Justification</textarea>
+    </div>
+
+    <div class="alert alert-secondary small">
+        @if (m.Risk == RunbookRisks.Low)
+        {
+            <span>Düşük riskli: zamanlama hemen etkin olur ve tetiklendiğinde onaysız çalışır.</span>
+        }
+        else if (m.Risk == RunbookRisks.Medium)
+        {
+            <span>Orta riskli: zamanlama <strong>başka bir yetkili onaylayınca</strong> etkin olur. Zaman tetiklemesinde onaysız çalışır; alarm tetiklemesinde her seferinde onay ister.</span>
+        }
+        else
+        {
+            <span>Yüksek riskli: zamanlama onay gerektirir ve <strong>her çalıştırma da ayrıca onay</strong> ister.</span>
+        }
+    </div>
+
+    <div>
+        <button type="submit" class="btn btn-primary">Zamanlamayı oluştur</button>
+        <a asp-action="Index" class="btn btn-link">Vazgeç</a>
+    </div>
+</form>

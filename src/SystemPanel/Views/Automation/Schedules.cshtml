@@ -1,0 +1,52 @@
+@model IReadOnlyList<SystemPanel.Models.RunbookSchedule>
+@{
+    ViewData["Title"] = "Zamanlamalar";
+}
+
+<div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+    <h2 class="fw-bold mb-0">Zamanlamalar ve tetikleyiciler</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">Katalog</a>
+</div>
+<partial name="_StatusMessages" />
+
+<p class="text-muted small">
+    Zamanlama oluşturmak için katalogdaki runbook kartından <strong>Zamanla</strong> seçin. Orta ve yüksek riskli zamanlamalar başka
+    bir yetkili onaylayana kadar çalışmaz. Alarm tetikleyicisi yalnızca düşük riskli agent runbook'larını otomatik çalıştırır;
+    diğerleri onay talebi oluşturur.
+</p>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>Ad</th><th>Runbook</th><th>Tetikleyici</th><th>Hedef</th><th>Durum</th><th>Sonraki (UTC)</th><th>Son tetikleme</th><th></th></tr>
+        </thead>
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="8" class="text-center text-muted py-4">Zamanlama yok.</td></tr>
+            }
+            @foreach (var s in Model)
+            {
+                <tr>
+                    <td>@s.Name<br /><span class="small text-muted">@s.CreatedBy</span></td>
+                    <td>@s.RunbookVersion?.Title <partial name="_Badges" model='("risk", s.RunbookVersion?.Risk ?? "high")' /></td>
+                    <td class="small">
+                        @if (s.TriggerType == "cron")
+                        {
+                            <code>@s.CronExpression</code>
+                        }
+                        else
+                        {
+                            <span>Alarm: @s.AlarmMetric?.ToUpperInvariant() @s.AlarmDrive</span>
+                        }
+                    </td>
+                    <td class="small text-break">@s.TargetSummary</td>
+                    <td><partial name="_ScheduleBadge" model="s.Status" /></td>
+                    <td class="small text-nowrap">@s.NextFireAtUtc?.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="small">@s.LastMessage</td>
+                    <td><a asp-action="Schedule" asp-route-id="@s.Id" class="btn btn-sm btn-outline-secondary">Ayrıntı</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

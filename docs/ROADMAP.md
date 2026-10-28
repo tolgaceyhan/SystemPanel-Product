@@ -16,7 +16,7 @@
 1. ✅ **Kurulum:** IIS kurulum betiği, sürüm paketi, ilk kurulum sihirbazı. Sonraki adım: MSI paketi (WiX, Windows derleme makinesinde).
 2. **Kod imzalama:** web, agent, dashboard ve kurulum paketleri.
 3. ✅ **Genelleştirme:** yapılandırılabilir birim etiketi; Türkiye haritası opsiyonel modül.
-4. **CDN bağımlılıklarının yerelleştirilmesi** (Chart.js, toastr, Bootstrap Icons) ve tam CSP.
+4. ✅ **CDN bağımlılıkları kaldırıldı**, CSP `self` ile sınırlandı; testle korunuyor. Sonraki adım: satır içi script'lerin dosyalara taşınması ve nonce tabanlı CSP.
 5. Harita/istatistik ekranlarında stub veri yerine gerçek veri (MapUnitService, DP listesi). `SccmDpSnapshot` kaynağının ürüne dahil edilmesi.
 6. İzleme: çevrimdışı uyarısı, alarm onaylama ve susturma, sunucu bazında eşikler.
 7. Audit kayıtlarının SIEM'e aktarımı (syslog/CEF) ve saklama süresi.

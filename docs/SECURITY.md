@@ -24,7 +24,7 @@ Kurulumda değiştirilmesi/oluşturulması gereken kimlik bilgileri: SQL bağlan
 | Lockout | Yerel hesaplar `Security:MaxFailedAccessAttempts` / `LockoutMinutes`. AD hesapları için AD politikası geçerlidir. |
 | DataProtection | Anahtarlar `%ProgramData%\SystemPanel\DataProtection-Keys` (veya `Security:DataProtectionKeysPath`), Windows'ta DPAPI ile şifreli. Web kökü dışında. |
 | CSRF | Tüm durum değiştiren POST'larda antiforgery. |
-| Başlıklar | CSP (frame-ancestors, object-src, base-uri, form-action), nosniff, `X-Frame-Options: SAMEORIGIN`, Referrer-Policy, COOP, Permissions-Policy. Script kaynaklarını kısıtlayan tam CSP ROADMAP'tedir (satır içi script'ler temizlenmeli). |
+| Başlıklar | CSP: tüm kaynaklar yalnızca uygulamanın kendisinden (`default-src 'self'`; harici script/stil/yazı tipi yok), `object-src 'none'`, `frame-ancestors 'self'`. Satır içi script'ler nedeniyle `'unsafe-inline'` şimdilik açık (ROADMAP: nonce tabanlı CSP). Ayrıca nosniff, `X-Frame-Options: SAMEORIGIN`, Referrer-Policy, COOP, Permissions-Policy. |
 | Rate limit | Agent uçları: IP başına `Monitoring:RateLimitPerMinute`. |
 | Dosya yükleme | Uzantı allowlist'i, boyut sınırı (`FileStorage:MaxFileBytes`), yol normalizasyonu (path traversal engeli), web kökü dışında depolama. |
 | PowerShell | Yalnızca `src/SystemPanel/scripts/*.ps1`; `-File` + `ArgumentList`; GPO adı/GUID/OU DN doğrulaması; `Gpo:AllowDelete`/`AllowImport` varsayılan kapalı. |

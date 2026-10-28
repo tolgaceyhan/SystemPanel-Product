@@ -24,4 +24,5 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
   - IIS kurulum/güncelleme ve kaldırma betikleri
   - Sürüm paketi üretimi (`build/Build-Release.ps1`): idempotent SQL script, EF migration paketi, isteğe bağlı kod imzalama, SHA-256 özeti
   - CI'da Windows paket doğrulaması
+- **Kapalı ağ uyumu:** harici (CDN) kaynak yok; CSP tüm kaynakları uygulamanın kendisiyle sınırlar; bunu doğrulayan test var.
 - Duyuru, SMS, dosya yönetimi, log ve istatistik modülleri.

@@ -1,6 +1,6 @@
 # Üçüncü Taraf Bileşenler
 
-SystemPanel aşağıdaki açık kaynak bileşenleri kullanır. Tümü ticari (kapalı kaynak) dağıtıma izin veren lisanslara sahiptir. Lisans metinleri paketlerin içinde ve `wwwroot/lib/*/LICENSE*` dosyalarında yer alır; dağıtım paketine bu dosya ile birlikte eklenmelidir.
+SystemPanel aşağıdaki açık kaynak bileşenleri kullanır. Tümü ticari (kapalı kaynak) dağıtıma izin veren lisanslara sahiptir. Ürün internetten (CDN) hiçbir kaynak yüklemez; tüm istemci kütüphaneleri `wwwroot` altındadır. Lisans metinleri paketlerin içinde ve `wwwroot/lib/*/LICENSE*` dosyalarında yer alır; dağıtım paketine bu dosya ile birlikte eklenmelidir.
 
 > Yeni paket eklerken lisansını kontrol edin. **AGPL / GPL / SSPL / "Commons Clause" / ticari kullanımı kısıtlayan lisanslar kabul edilmez.** `itext7` (AGPL) bu nedenle PDFsharp (MIT) ile değiştirildi.
 
@@ -32,15 +32,8 @@ SystemPanel aşağıdaki açık kaynak bileşenleri kullanır. Tümü ticari (ka
 |---|---|
 | Bootstrap | MIT |
 | jQuery, jquery-validation, jquery-validation-unobtrusive | MIT |
+| Chart.js 4 (`wwwroot/js/chart.js`) | MIT |
 | Font Awesome Free | İkonlar CC BY 4.0, yazı tipleri SIL OFL 1.1, kod MIT (atıf zorunlu: bu dosya) |
-
-## CDN'den yüklenenler (yerelleştirilmeli — ROADMAP)
-
-| Bileşen | Lisans | Not |
-|---|---|---|
-| Chart.js | MIT | Sürümsüz CDN adresi; kapalı ağda çalışmaz |
-| toastr | MIT | `latest` CDN adresi |
-| Bootstrap Icons | MIT | |
 
 ## Yalnızca geliştirme / test (dağıtılmaz)
 

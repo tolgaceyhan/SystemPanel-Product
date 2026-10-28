@@ -1,8 +1,7 @@
-﻿@{
+@{
     ViewData["Title"] = "Sunucu Yönetimi";
     var serverList = ViewBag.ServerNames as List<string> ?? new List<string>();
 }
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
 
 <h2 class="mb-4">🖥️ Sunucu Ekle / Kaldır</h2>
 
@@ -49,19 +48,18 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script>
         function testAdConnection() {
             fetch("/ServerMonitoring/TestAdConnection", { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        toastr.success(data.message);
+                        SpNotify.success(data.message);
                     } else {
-                        toastr.error(data.message);
+                        SpNotify.error(data.message);
                     }
                 })
-                .catch(() => toastr.error("Bağlantı sırasında hata oluştu."));
+                .catch(() => SpNotify.error("Bağlantı sırasında hata oluştu."));
         }
     </script>
 }

@@ -74,7 +74,9 @@ public sealed class PlatformTests : IClassFixture<SystemPanelFactory>
         var response = await _factory.CreateAnonymousClient().GetAsync("/Account/Login");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("nosniff", response.Headers.GetValues("X-Content-Type-Options").Single());
-        Assert.True(response.Headers.Contains("Content-Security-Policy") || response.Headers.Contains("X-Frame-Options"));
+        var csp = response.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("default-src 'self'", csp);
+        Assert.Contains("object-src 'none'", csp);
     }
 
     [Fact]

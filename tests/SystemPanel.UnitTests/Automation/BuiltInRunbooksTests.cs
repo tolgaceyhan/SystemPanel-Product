@@ -71,6 +71,14 @@ public sealed class BuiltInRunbooksTests
 
     [Theory]
     [MemberData(nameof(Runbooks))]
+    public void Lint_HasNoErrors_WithVendorRules(string name)
+    {
+        var findings = RunbookSource.Lint(RunbookSource.Load(Path.Combine(SourceRoot(), name)), organization: false);
+        Assert.Empty(findings.Where(f => f.Severity == RunbookLintSeverity.Error).Select(f => f.Message));
+    }
+
+    [Theory]
+    [MemberData(nameof(Runbooks))]
     public void CanBeSignedAndVerified(string name)
     {
         var (manifest, script) = Load(name);

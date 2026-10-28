@@ -19,4 +19,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
 - **Lisans:** çevrimdışı imzalı lisans dosyası (ECDSA P-256), lisans ekranı, agent sınırı; lisans sorunu mevcut işlemleri durdurmaz.
 - **Marka:** ürün adı ve logolar yapılandırılabilir (`Branding`).
 - **Organizasyon yapısı:** birim etiketi yapılandırılabilir (`Organization:UnitLabel`; il, bölge, şube...). Türkiye il haritası opsiyonel modül (`Organization:Map:Enabled`, varsayılan kapalı).
+- **Kurulum:**
+  - İlk kurulum sihirbazı (`/setup`, tek kullanımlık belirteç)
+  - IIS kurulum/güncelleme ve kaldırma betikleri
+  - Sürüm paketi üretimi (`build/Build-Release.ps1`): idempotent SQL script, EF migration paketi, isteğe bağlı kod imzalama, SHA-256 özeti
+  - CI'da Windows paket doğrulaması
 - Duyuru, SMS, dosya yönetimi, log ve istatistik modülleri.

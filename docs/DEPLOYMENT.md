@@ -4,26 +4,57 @@ Hedef: kapalı ağda Windows Server, IIS (InProcess) veya Windows servisi, SQL S
 
 ## 1. Gereksinimler
 
-- Windows Server 2019+; .NET 9 ASP.NET Core Hosting Bundle (veya self-contained yayın)
+- Windows Server 2019+, IIS (`Install-WindowsFeature Web-Server -IncludeManagementTools`)
+- **.NET 9 Hosting Bundle** (IIS için ASP.NET Core Module). Uygulama self-contained olduğu için ayrı .NET runtime gerekmez. Kapalı ağda çevrimdışı kurulum dosyasını kullanın.
 - SQL Server 2017+
 - AD'ye LDAPS (636) erişimi önerilir
 - GPO modülü için: RSAT Group Policy Management (`GroupPolicy` PowerShell modülü) ve yetkili hizmet hesabı
-- HTTPS sertifikası (kurum CA'sı)
+- HTTPS sertifikası (kurum CA'sı), sunucunun `LocalMachine\My` deposunda
 
-## 2. Derleme
+## 2. Hızlı kurulum (önerilen)
 
-```bash
-dotnet restore SystemPanel.sln
-dotnet build SystemPanel.sln -c Release
-dotnet test SystemPanel.sln
-dotnet publish src/SystemPanel -c Release -o out/web          # win-x64, self-contained (Release)
-dotnet publish src/AgentSystemPanel -c Release -o out/agent
-dotnet publish src/SystemPanel.Dashboard -c Release -o out/dashboard
+Sürüm paketi `SystemPanel-<sürüm>.zip` olarak gelir. Önce `SHA256SUMS.txt` ile bütünlüğünü doğrulayın, sonra açın:
+
+```
+web\  agent\  dashboard\  database\ (migrate.sql, efbundle.exe)  scripts\  docs```
+
+Yönetici PowerShell'de:
+
+```powershell
+cd <paket>\scripts
+.\Install-SystemPanel.ps1 -HostName panel.kurum.local -CertificateThumbprint <parmak-izi> -SqlServer <sql-sunucu> -Database SystemPanel
 ```
 
-**Çevrimdışı NuGet:** Kapalı ağdaki derleme makinesinde `nuget.offline.example.config` dosyasını `nuget.config` olarak kopyalayın ve yerel paket klasörünü gösterin. Repodaki `nuget.config` nuget.org'u kullanır (CI için).
+Betik şunları yapar:
+- Ön koşulları kontrol eder.
+- IIS uygulama havuzunu ve HTTPS sitesini oluşturur.
+- Dosyaları kopyalar.
+- `%ProgramData%\SystemPanel` izinlerini ayarlar.
+- Sır içermeyen `appsettings.Production.json` dosyasını oluşturur (SQL için Windows Authentication).
+- Siteyi başlatıp `/health/live` adresini kontrol eder.
 
-SDK 10 ile `net9.0` hedefini derlerken test/ef araçları için `DOTNET_ROLL_FORWARD=Major` gerekebilir.
+**Güncelleme** için aynı komutu yeni paketle çalıştırın. Mevcut yapılandırma ve loglar korunur.
+
+**Veritabanı:** Betik varsayılan olarak şemaya dokunmaz. İki seçenek var:
+- DBA, `database\migrate.sql` dosyasını uygular (idempotent; önce yedek alınır).
+- Betik `-ApplyDatabaseMigrations` ile çalıştırılır. Onay istenir ve şema, betiği çalıştıran hesabın yetkisiyle güncellenir.
+
+**SQL erişimi:** SQL ayrı sunucudaysa web sunucusunun bilgisayar hesabına (`DOMAIN\SUNUCU$`), aynı sunucudaysa `IIS AppPool\SystemPanel` hesabına login ve `db_datareader` / `db_datawriter` yetkisi verin.
+
+**İlk yönetici:** `https://<sunucu>/setup` adresini açın. İstenen kurulum belirteci, sunucuda yalnızca yöneticilerin okuyabildiği `%ProgramData%\SystemPanel\setup-token.txt` dosyasındadır. Kurulumdan sonra belirteç silinir ve sayfa kapanır. Bu hesap acil durum (break-glass) hesabıdır; günlük kullanımda AD hesapları kullanılır.
+
+**Kaldırma:** `.\Uninstall-SystemPanel.ps1`. Veritabanı ve `%ProgramData%\SystemPanel` verileri korunur.
+
+## 2a. Paketin üretilmesi (üretici)
+
+```powershell
+pwsh ./build/Build-Release.ps1 -Version 1.0.0 -SigningCertThumbprint <kod-imzalama-sertifikası> -TimestampUrl <zaman-damgası-url>
+```
+
+- Paket `artifacts\` altında oluşur.
+- CI her push'ta paketin üretilebildiğini doğrular (imzasız).
+- Müşteriye giden paket, kod imzalama sertifikası olan derleme makinesinde imzalı olarak üretilir.
+- **Çevrimdışı NuGet:** Kapalı ağdaki derleme makinesinde `nuget.offline.example.config` dosyasını `nuget.config` olarak kopyalayın.
 
 ## 3. Yapılandırma
 
@@ -33,7 +64,7 @@ SDK 10 ile `net9.0` hedefini derlerken test/ef araçları için `DOTNET_ROLL_FOR
    - Ortam değişkeni (IIS uygulama havuzu / servis): `Ldap__BindPassword`, `ConnectionStrings__DefaultConnection`, ...
 3. SQL için mümkünse Windows Authentication (`Integrated Security=True`) ve uygulama havuzu kimliği kullanın.
 4. `RoleMapping` ve `ActiveDirectory:Scope` → bkz. [AUTHORIZATION.md](AUTHORIZATION.md).
-5. İlk kurulum yöneticisi (opsiyonel): `Bootstrap__AdminUserName`, `Bootstrap__AdminPassword` ortam değişkenleri. Parola en az 12 karakter, büyük/küçük harf ve rakam içermeli. Hesap oluştuktan sonra **bu değişkenleri kaldırın.**
+5. İlk yönetici: `/setup` sihirbazı (bkz. §2). Alternatif (otomatik kurulumlar): `Bootstrap__AdminUserName`, `Bootstrap__AdminPassword` ortam değişkenleri. Parola en az 12 karakter, büyük/küçük harf ve rakam içermeli. Hesap oluştuktan sonra **bu değişkenleri kaldırın.**
 6. Organizasyon yapısı: `Organization:UnitLabel` / `UnitLabelPlural` (ör. "İl"/"İller", "Bölge"/"Bölgeler"; varsayılan "Birim"). Birimleri Türkiye illerine karşılık geliyorsa `Organization:Map:Enabled=true` ile il haritası modülü açılır (varsayılan kapalı).
 7. Dosya yolları: `FileStorage:Root`, `Gpo:BackupRoot`, `Security:DataProtectionKeysPath` (boşsa `%ProgramData%\SystemPanel\...`).
 

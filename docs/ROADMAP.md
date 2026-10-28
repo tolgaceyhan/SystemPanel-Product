@@ -13,7 +13,7 @@
 
 ## 1.0 sürümü öncesi (P1)
 
-1. **Kurulum paketi:** sihirbaz (MSI), veritabanı oluşturma, ilk yönetici, sertifika kontrolü.
+1. ✅ **Kurulum:** IIS kurulum betiği, sürüm paketi, ilk kurulum sihirbazı. Sonraki adım: MSI paketi (WiX, Windows derleme makinesinde).
 2. **Kod imzalama:** web, agent, dashboard ve kurulum paketleri.
 3. ✅ **Genelleştirme:** yapılandırılabilir birim etiketi; Türkiye haritası opsiyonel modül.
 4. **CDN bağımlılıklarının yerelleştirilmesi** (Chart.js, toastr, Bootstrap Icons) ve tam CSP.

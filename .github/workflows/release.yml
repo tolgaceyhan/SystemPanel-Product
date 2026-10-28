@@ -1,0 +1,41 @@
+# Sürüm paketi: "v1.2.3" biçimindeki etiketlerde veya elle çalıştırılır. Paket iş çıktısı (artifact) olarak saklanır.
+# Kod imzalama sertifikası CI'da bulunmaz; müşteriye gidecek paket imzalı bir derleme makinesinde
+# Build-Release.ps1 -SigningCertThumbprint ile üretilmelidir.
+
+name: Release package
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Sürüm (ör. 1.0.0-preview.2)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+    - name: Build release package
+      shell: pwsh
+      env:
+        INPUT_VERSION: ${{ github.event.inputs.version }}
+        REF_NAME: ${{ github.ref_name }}
+      run: |
+        $version = if ($env:INPUT_VERSION) { $env:INPUT_VERSION } else { $env:REF_NAME.TrimStart('v') }
+        ./build/Build-Release.ps1 -Version $version
+    - uses: actions/upload-artifact@v4
+      with:
+        name: systempanel-release
+        path: |
+          artifacts/*.zip
+          artifacts/SHA256SUMS.txt

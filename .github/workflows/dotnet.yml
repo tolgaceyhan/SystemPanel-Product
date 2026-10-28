@@ -28,3 +28,42 @@ jobs:
       run: dotnet build SystemPanel.sln --no-restore
     - name: Test
       run: dotnet test SystemPanel.sln --no-build --verbosity normal
+
+  # Windows: PowerShell betiklerinin sözdizimi/analizi ve sürüm paketinin gerçekten üretilebildiğinin doğrulanması.
+  windows-package:
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+    - name: PowerShell syntax check
+      shell: pwsh
+      run: |
+        $failed = $false
+        Get-ChildItem -Recurse -Filter *.ps1 -Path scripts, build, src/SystemPanel/scripts | ForEach-Object {
+          $tokens = $null; $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+          foreach ($e in $errors) { Write-Host "::error file=$($_.FullName),line=$($e.Extent.StartLineNumber)::$($e.Message)"; $failed = $true }
+        }
+        if ($failed) { exit 1 }
+    - name: PSScriptAnalyzer (errors)
+      shell: pwsh
+      run: |
+        Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+        $issues = Invoke-ScriptAnalyzer -Path scripts, build -Recurse -Severity Error
+        $issues | Format-Table -AutoSize
+        if ($issues) { exit 1 }
+    - name: Build release package
+      shell: pwsh
+      run: ./build/Build-Release.ps1 -Version 0.0.0-ci.${{ github.run_number }} -SkipTests
+    - uses: actions/upload-artifact@v4
+      with:
+        name: systempanel-package
+        path: |
+          artifacts/*.zip
+          artifacts/SHA256SUMS.txt
+        retention-days: 7

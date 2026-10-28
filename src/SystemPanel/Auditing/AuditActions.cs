@@ -57,5 +57,18 @@ namespace SystemPanel.Auditing
 
         public const string LicenseInstall = "license.install";
         public const string SetupCompleted = "setup.completed";
+
+        public const string AutomationKeyAdd = "automation.key.add";
+        public const string AutomationKeyRevoke = "automation.key.revoke";
+        public const string AutomationRunbookImport = "automation.runbook.import";
+        public const string AutomationRunbookDisable = "automation.runbook.disable";
+        public const string AutomationRunRequested = "automation.run.requested";
+        public const string AutomationRunPreview = "automation.run.preview";
+        public const string AutomationRunApproved = "automation.run.approved";
+        public const string AutomationRunRejected = "automation.run.rejected";
+        public const string AutomationRunCancelled = "automation.run.cancelled";
+        public const string AutomationRunExpired = "automation.run.expired";
+        public const string AutomationRunStarted = "automation.run.started";
+        public const string AutomationRunCompleted = "automation.run.completed";
     }
 }

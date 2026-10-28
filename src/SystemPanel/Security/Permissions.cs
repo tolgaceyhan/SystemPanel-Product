@@ -56,6 +56,11 @@ namespace SystemPanel.Security
         public const string SmsSend = "sms.send";
         public const string SmsBulkSend = "sms.bulk";
 
+        public const string AutomationView = "automation.view";
+        public const string AutomationRun = "automation.run";
+        public const string AutomationApprove = "automation.approve";
+        public const string AutomationManage = "automation.manage";
+
         public const string AuditView = "audit.view";
         public const string LogsView = "logs.view";
         public const string LogsManage = "logs.manage";

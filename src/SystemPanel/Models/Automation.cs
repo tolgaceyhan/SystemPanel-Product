@@ -1,0 +1,171 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace SystemPanel.Models
+{
+    /// <summary>
+    /// Runbook paketlerini imzalayabilecek güvenilen açık anahtar (ADR-002 §2). Ürünle gelen üretici anahtarı
+    /// derlemeye gömülüdür ve bu tabloda değildir; bu tablo kurumun kendi anahtarlarını tutar.
+    /// </summary>
+    public class RunbookSigningKey
+    {
+        public Guid Id { get; set; }
+
+        [Required, MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>SHA-256(SubjectPublicKeyInfo), küçük harf hex.</summary>
+        [Required, MaxLength(64)]
+        public string Fingerprint { get; set; } = string.Empty;
+
+        [Required, MaxLength(1024)]
+        public string PublicKeyPem { get; set; } = string.Empty;
+
+        public bool IsRevoked { get; set; }
+
+        public DateTime CreatedAtUtc { get; set; }
+
+        [MaxLength(256)]
+        public string? CreatedBy { get; set; }
+
+        public DateTime? RevokedAtUtc { get; set; }
+
+        [MaxLength(256)]
+        public string? RevokedBy { get; set; }
+    }
+
+    /// <summary>
+    /// İçe aktarılmış (imzası doğrulanmış) runbook sürümü. İçerik DEĞİŞMEZ; yeni sürüm yeni kayıttır.
+    /// Çalıştırma anında <see cref="PackageText"/> yeniden doğrulanır.
+    /// </summary>
+    public class RunbookVersion
+    {
+        public Guid Id { get; set; }
+
+        [Required, MaxLength(100)]
+        public string RunbookId { get; set; } = string.Empty;
+
+        [Required, MaxLength(32)]
+        public string Version { get; set; } = string.Empty;
+
+        [Required, MaxLength(150)]
+        public string Title { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
+        public string? Description { get; set; }
+
+        [Required, MaxLength(10)]
+        public string Risk { get; set; } = string.Empty;
+
+        [Required, MaxLength(20)]
+        public string TargetType { get; set; } = string.Empty;
+
+        [Required, MaxLength(20)]
+        public string Executor { get; set; } = string.Empty;
+
+        public bool SupportsDryRun { get; set; }
+
+        [Required, MaxLength(64)]
+        public string ScriptSha256 { get; set; } = string.Empty;
+
+        [Required, MaxLength(64)]
+        public string KeyFingerprint { get; set; } = string.Empty;
+
+        /// <summary>İmzalı paketin kendisi (.sprb içeriği).</summary>
+        [Required]
+        public string PackageText { get; set; } = string.Empty;
+
+        public bool IsEnabled { get; set; } = true;
+
+        public DateTime ImportedAtUtc { get; set; }
+
+        [MaxLength(256)]
+        public string? ImportedBy { get; set; }
+    }
+
+    public static class RunbookRunStatus
+    {
+        public const string PendingApproval = "PendingApproval";
+        public const string Approved = "Approved";
+        public const string Running = "Running";
+        public const string Succeeded = "Succeeded";
+        public const string Failed = "Failed";
+        public const string TimedOut = "TimedOut";
+        public const string Rejected = "Rejected";
+        public const string Cancelled = "Cancelled";
+        public const string Expired = "Expired";
+        public const string PreviewFailed = "PreviewFailed";
+
+        public static readonly IReadOnlyCollection<string> Terminal = new[] { Succeeded, Failed, TimedOut, Rejected, Cancelled, Expired, PreviewFailed };
+    }
+
+    /// <summary>Bir runbook çalıştırma talebi ve sonucu.</summary>
+    public class RunbookRun
+    {
+        public Guid Id { get; set; }
+
+        public Guid RunbookVersionId { get; set; }
+        public RunbookVersion? RunbookVersion { get; set; }
+
+        [Required, MaxLength(30)]
+        public string Status { get; set; } = RunbookRunStatus.PendingApproval;
+
+        /// <summary>Doğrulanmış parametreler (JSON). Parola/anahtar türünde parametre desteklenmez.</summary>
+        [Required]
+        public string ParametersJson { get; set; } = "{}";
+
+        [MaxLength(512)]
+        public string? TargetSummary { get; set; }
+
+        [MaxLength(500)]
+        public string? Justification { get; set; }
+
+        [Required, MaxLength(256)]
+        public string RequestedBy { get; set; } = string.Empty;
+
+        public DateTime RequestedAtUtc { get; set; }
+
+        public int RequiredApprovals { get; set; }
+
+        public DateTime? ApprovalExpiresAtUtc { get; set; }
+
+        /// <summary>Önizleme (dry-run) çıktısı.</summary>
+        public string? PreviewOutput { get; set; }
+
+        public DateTime? StartedAtUtc { get; set; }
+        public DateTime? FinishedAtUtc { get; set; }
+        public int? ExitCode { get; set; }
+
+        /// <summary>Çalıştırma çıktısı (maskelenmiş, kısaltılmış).</summary>
+        public string? Output { get; set; }
+
+        [MaxLength(2000)]
+        public string? Error { get; set; }
+
+        [MaxLength(64)]
+        public string? CorrelationId { get; set; }
+
+        public List<RunbookApproval> Approvals { get; set; } = new();
+    }
+
+    public class RunbookApproval
+    {
+        public Guid Id { get; set; }
+
+        public Guid RunId { get; set; }
+        public RunbookRun? Run { get; set; }
+
+        [Required, MaxLength(256)]
+        public string Approver { get; set; } = string.Empty;
+
+        /// <summary>"approved" | "rejected"</summary>
+        [Required, MaxLength(10)]
+        public string Decision { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string? Comment { get; set; }
+
+        public DateTime DecidedAtUtc { get; set; }
+    }
+}

@@ -35,7 +35,10 @@ namespace SystemPanel.Security
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
                 if (await db.RolePermissions.AnyAsync(cancellationToken))
+                {
+                    await EnsureAdminHasAllPermissionsAsync(db, cancellationToken);
                     return;
+                }
 
                 foreach (var (role, permissions) in DefaultRolePermissions.Map)
                 {
@@ -50,6 +53,28 @@ namespace SystemPanel.Security
             {
                 _logger.LogWarning(ex, "Rol-izin eşlemesi tohumlanamadı; varsayılan eşleme bellekte kullanılacak.");
             }
+        }
+
+        /// <summary>
+        /// Admin rolü tanımı gereği tüm izinlere sahiptir. Sürüm yükseltmesinde eklenen yeni izinler
+        /// (ör. automation.*) mevcut kurulumlarda Admin'e eklenir. Diğer rollere dokunulmaz.
+        /// </summary>
+        private async Task EnsureAdminHasAllPermissionsAsync(ApplicationDbContext db, CancellationToken ct)
+        {
+            var existing = await db.RolePermissions
+                .Where(r => r.RoleName == DefaultRolePermissions.Admin)
+                .Select(r => r.Permission)
+                .ToListAsync(ct);
+
+            var missing = Permissions.All.Except(existing, StringComparer.OrdinalIgnoreCase).ToList();
+            if (missing.Count == 0)
+                return;
+
+            foreach (var permission in missing)
+                db.RolePermissions.Add(new RolePermission { RoleName = DefaultRolePermissions.Admin, Permission = permission });
+
+            await db.SaveChangesAsync(ct);
+            _logger.LogInformation("Admin rolüne yeni izinler eklendi: {Permissions}", string.Join(", ", missing));
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

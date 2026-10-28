@@ -10,7 +10,8 @@
 <p class="text-muted">
     Yetkilendirme izinlerle yapılır; roller izinlere bu tabloyla eşlenir. AD grupları rollere
     <code>RoleMapping</code> yapılandırmasıyla eşlenir. <code>scope.all</code> izni olmayan roller yalnızca
-    kendi birim kapsamlarında işlem yapabilir. Ayrıntı: docs/AUTHORIZATION.md
+    kendi birim kapsamlarında işlem yapabilir. <strong>Admin</strong> rolü her zaman tüm izinlere sahiptir;
+    kısıtlı yönetici için ayrı bir rol tanımlayın. Ayrıntı: docs/AUTHORIZATION.md
 </p>
 <partial name="_StatusMessages" />
 
@@ -38,7 +39,8 @@
                         {
                             <td class="text-center">
                                 <input type="checkbox" class="form-check-input" name="granted" value="@role|@permission"
-                                       checked="@Model.IsGranted(role, permission)" disabled="@(!canEdit)" />
+                                       checked="@Model.IsGranted(role, permission)"
+                                       disabled="@(!canEdit || string.Equals(role, SystemPanel.Security.DefaultRolePermissions.Admin, StringComparison.OrdinalIgnoreCase))" />
                             </td>
                         }
                     </tr>

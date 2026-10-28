@@ -45,6 +45,12 @@ namespace SystemPanel.Data
         // Agent kayıtları
         public DbSet<Agent> Agents => Set<Agent>();
 
+        // Otomasyon (ADR-002)
+        public DbSet<RunbookSigningKey> RunbookSigningKeys => Set<RunbookSigningKey>();
+        public DbSet<RunbookVersion> RunbookVersions => Set<RunbookVersion>();
+        public DbSet<RunbookRun> RunbookRuns => Set<RunbookRun>();
+        public DbSet<RunbookApproval> RunbookApprovals => Set<RunbookApproval>();
+
 
 
         // API AJAN ICIN
@@ -100,6 +106,23 @@ namespace SystemPanel.Data
             modelBuilder.Entity<RolePermission>()
                 .HasIndex(r => new { r.RoleName, r.Permission })
                 .IsUnique();
+
+            modelBuilder.Entity<RunbookSigningKey>()
+                .HasIndex(k => k.Fingerprint)
+                .IsUnique();
+
+            modelBuilder.Entity<RunbookVersion>(e =>
+            {
+                e.HasIndex(v => new { v.RunbookId, v.Version }).IsUnique();
+            });
+
+            modelBuilder.Entity<RunbookRun>(e =>
+            {
+                e.HasIndex(r => r.Status);
+                e.HasIndex(r => r.RequestedAtUtc);
+                e.HasOne(r => r.RunbookVersion).WithMany().HasForeignKey(r => r.RunbookVersionId).OnDelete(DeleteBehavior.Restrict);
+                e.HasMany(r => r.Approvals).WithOne(a => a.Run).HasForeignKey(a => a.RunId).OnDelete(DeleteBehavior.Cascade);
+            });
 
 
         }

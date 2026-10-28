@@ -62,8 +62,12 @@ namespace SystemPanel.Controllers
                 .Select(Parse)
                 .Where(x => x != null && Permissions.IsKnown(x.Value.Permission))
                 .Select(x => x!.Value)
+                .Where(x => !string.Equals(x.Role, DefaultRolePermissions.Admin, StringComparison.OrdinalIgnoreCase))
                 .Distinct()
                 .ToList();
+
+            // Admin rolü tanımı gereği tüm izinlere sahiptir (matristen kısıtlanamaz).
+            requested.AddRange(Permissions.All.Select(p => (DefaultRolePermissions.Admin, p)));
 
             // Kendini kilitleme koruması: en az bir rol ayarları yönetebilmelidir.
             if (!requested.Any(x => x.Permission == Permissions.SettingsManage))

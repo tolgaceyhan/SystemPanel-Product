@@ -31,6 +31,28 @@
 <form asp-action="NewRun" asp-route-versionId="@Model.Version.Id" method="post" class="card card-body shadow-sm" style="max-width: 760px">
     @Html.AntiForgeryToken()
 
+    @if (m.Executor == RunbookExecutors.Agent)
+    {
+        <div class="mb-3">
+            <label class="form-label fw-bold" for="targetAgentId">Hedef sunucu *</label>
+            @if (Model.TargetAgents.Count == 0)
+            {
+                <div class="alert alert-warning mb-0">Yetki kapsamınızda kayıtlı ve etkin bir agent yok.</div>
+            }
+            else
+            {
+                <select class="form-select" id="targetAgentId" name="targetAgentId" required>
+                    <option value=""></option>
+                    @foreach (var a in Model.TargetAgents)
+                    {
+                        <option value="@a.Id" selected="@(a.Id == Model.TargetAgentId)">@a.Hostname @(string.IsNullOrWhiteSpace(a.Province) ? "" : $"({a.Province})")</option>
+                    }
+                </select>
+                <div class="form-text">İş, seçilen sunucudaki agent tarafından alınıp çalıştırılır. Agent'ta otomasyon açık ve bu runbook izin listesinde olmalıdır.</div>
+            }
+        </div>
+    }
+
     @foreach (var p in m.Parameters)
     {
         var id = "p_" + p.Name;

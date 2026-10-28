@@ -120,6 +120,7 @@ namespace SystemPanel.Data
             {
                 e.HasIndex(r => r.Status);
                 e.HasIndex(r => r.RequestedAtUtc);
+                e.HasIndex(r => new { r.TargetAgentId, r.Status });
                 e.HasOne(r => r.RunbookVersion).WithMany().HasForeignKey(r => r.RunbookVersionId).OnDelete(DeleteBehavior.Restrict);
                 e.HasMany(r => r.Approvals).WithOne(a => a.Run).HasForeignKey(a => a.RunId).OnDelete(DeleteBehavior.Cascade);
             });

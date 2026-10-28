@@ -42,6 +42,7 @@ namespace SystemPanel.Automation
                 await RunInScopeAsync(async s =>
                 {
                     await s.ExpirePendingAsync(stoppingToken);
+                    await s.ExpireOverdueDispatchesAsync(stoppingToken);
                     while (!stoppingToken.IsCancellationRequested && await s.ExecuteNextAsync(stoppingToken)) { }
                 });
 

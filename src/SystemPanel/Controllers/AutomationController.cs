@@ -54,7 +54,7 @@ namespace SystemPanel.Controllers
         [HttpPost("runbooks/{versionId:guid}/request")]
         [ValidateAntiForgeryToken]
         [RequirePermission(Permissions.AutomationRun)]
-        public async Task<IActionResult> NewRun(Guid versionId, string? justification, CancellationToken ct)
+        public async Task<IActionResult> NewRun(Guid versionId, string? justification, Guid? targetAgentId, CancellationToken ct)
         {
             var model = await BuildRequestModelAsync(versionId, ct);
             if (model == null)
@@ -64,11 +64,12 @@ namespace SystemPanel.Controllers
                 .Where(kv => kv.Key.StartsWith(ParameterPrefix, StringComparison.Ordinal))
                 .ToDictionary(kv => kv.Key[ParameterPrefix.Length..], kv => (string?)kv.Value.LastOrDefault(), StringComparer.Ordinal);
 
-            var result = await _runs.RequestAsync(User, versionId, input, justification, ct);
+            var result = await _runs.RequestAsync(User, versionId, input, justification, targetAgentId, ct);
             if (!result.Success)
             {
                 model.Values = input;
                 model.Justification = justification;
+                model.TargetAgentId = targetAgentId;
                 model.Errors = result.ValidationErrors?.ToList() ?? new List<string>();
                 if (result.Error != null && model.Errors.Count == 0)
                     model.Errors.Add(result.Error);
@@ -79,6 +80,7 @@ namespace SystemPanel.Controllers
             {
                 RunbookRunStatus.PendingApproval => "Talep oluşturuldu; ikinci bir yetkilinin onayı bekleniyor.",
                 RunbookRunStatus.Approved => "Talep kuyruğa alındı.",
+                RunbookRunStatus.PreviewPending => "Talep oluşturuldu; önizleme hedef sunucudaki agent'ta çalışacak.",
                 _ => null,
             };
             if (result.Run.Status == RunbookRunStatus.PreviewFailed)
@@ -98,6 +100,9 @@ namespace SystemPanel.Controllers
                 Version = version,
                 Manifest = package?.Manifest,
                 VerificationError = error,
+                TargetAgents = package?.Manifest.Executor == RunbookExecutors.Agent
+                    ? await _runs.ListTargetAgentsAsync(User, ct)
+                    : Array.Empty<Agent>(),
             };
         }
 
@@ -123,7 +128,8 @@ namespace SystemPanel.Controllers
 
             ViewBag.Parameters = RunbookRunService.DescribeParameters(run.ParametersJson);
             ViewBag.CanDecide = (await _runs.ListAwaitingDecisionAsync(User, ct)).Any(r => r.Id == run.Id);
-            ViewBag.CanCancel = run.Status is RunbookRunStatus.PendingApproval or RunbookRunStatus.Approved
+            ViewBag.TargetAgent = run.TargetAgentId == null ? null : run.TargetSummary;
+            ViewBag.CanCancel = run.Status is RunbookRunStatus.PendingApproval or RunbookRunStatus.Approved or RunbookRunStatus.PreviewPending
                 && string.Equals(run.RequestedBy, User.Identity?.Name, StringComparison.OrdinalIgnoreCase);
             return View(run);
         }
@@ -224,5 +230,9 @@ namespace SystemPanel.Controllers
         public IReadOnlyDictionary<string, string?> Values { get; set; } = new Dictionary<string, string?>();
         public string? Justification { get; set; }
         public List<string> Errors { get; set; } = new();
+
+        /// <summary>Agent runbook'ları için seçilebilir hedefler (kullanıcının kapsamındaki etkin agent'lar).</summary>
+        public IReadOnlyList<Agent> TargetAgents { get; set; } = Array.Empty<Agent>();
+        public Guid? TargetAgentId { get; set; }
     }
 }

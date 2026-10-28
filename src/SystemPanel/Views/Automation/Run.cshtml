@@ -4,6 +4,7 @@
     var parameters = ViewBag.Parameters as IReadOnlyDictionary<string, string?> ?? new Dictionary<string, string?>();
     var canDecide = (bool)(ViewBag.CanDecide ?? false);
     var canCancel = (bool)(ViewBag.CanCancel ?? false);
+    var targetAgent = ViewBag.TargetAgent as string;
 }
 
 <div class="d-flex justify-content-between align-items-center mt-2 mb-3">
@@ -17,6 +18,10 @@
         <dl class="row mb-0">
             <dt class="col-sm-3">Durum</dt><dd class="col-sm-9"><partial name="_Badges" model='("status", Model.Status)' /></dd>
             <dt class="col-sm-3">Runbook</dt><dd class="col-sm-9"><code>@Model.RunbookVersion?.RunbookId</code> v@(Model.RunbookVersion?.Version) <partial name="_Badges" model='("risk", Model.RunbookVersion?.Risk ?? "high")' /></dd>
+            @if (targetAgent != null)
+            {
+                <dt class="col-sm-3">Hedef sunucu</dt><dd class="col-sm-9">@targetAgent (agent)</dd>
+            }
             <dt class="col-sm-3">Talep eden</dt><dd class="col-sm-9">@Model.RequestedBy · @Model.RequestedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</dd>
             @if (!string.IsNullOrWhiteSpace(Model.Justification))
             {

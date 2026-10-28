@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SystemPanel.Auditing;
+using SystemPanel.Contracts.Agents;
 using SystemPanel.Contracts.Automation;
 using SystemPanel.Data;
 using SystemPanel.Models;
@@ -78,6 +79,7 @@ namespace SystemPanel.Automation
             Guid versionId,
             IReadOnlyDictionary<string, string?> input,
             string? justification,
+            Guid? targetAgentId = null,
             CancellationToken ct = default)
         {
             var requester = UserName(user);
@@ -100,6 +102,22 @@ namespace SystemPanel.Automation
             if (package.Manifest.Risk != RunbookRisks.Low && string.IsNullOrWhiteSpace(justification))
                 return new RunbookOperationResult(false, "Gerekçe gerekli.", null, new[] { "Orta/yüksek riskli runbook'lar için gerekçe yazın." });
 
+            // Agent çalıştırıcısı: hedef agent kayıtlı, etkin ve kullanıcının kapsamında olmalı.
+            var isAgent = package.Manifest.Executor == RunbookExecutors.Agent;
+            Agent? targetAgent = null;
+            if (isAgent)
+            {
+                targetAgent = targetAgentId == null ? null : await _db.Agents.AsNoTracking().FirstOrDefaultAsync(a => a.Id == targetAgentId, ct);
+                if (targetAgent == null || !targetAgent.IsEnabled)
+                    return new RunbookOperationResult(false, "Hedef sunucu geçersiz.", null, new[] { "Kayıtlı ve etkin bir hedef sunucu (agent) seçin." });
+                if (!AgentInScope(user, scope, targetAgent))
+                    return new RunbookOperationResult(false, "Hedef sunucu kapsam dışında.", null, new[] { "Hedef sunucu yetki kapsamınızın dışında." });
+            }
+            else if (targetAgentId != null)
+            {
+                return RunbookOperationResult.Fail("Bu runbook bir hedef sunucu almaz.");
+            }
+
             var required = RequiredApprovalsFor(package.Manifest.Risk);
             var run = new RunbookRun
             {
@@ -107,7 +125,8 @@ namespace SystemPanel.Automation
                 RunbookVersionId = version.Id,
                 Status = required == 0 ? RunbookRunStatus.Approved : RunbookRunStatus.PendingApproval,
                 ParametersJson = SerializeParameters(bound),
-                TargetSummary = RunbookParameterBinder.Summarize(package.Manifest, bound),
+                TargetSummary = isAgent ? targetAgent!.Hostname : RunbookParameterBinder.Summarize(package.Manifest, bound),
+                TargetAgentId = targetAgent?.Id,
                 Justification = Truncate(justification?.Trim(), 500),
                 RequestedBy = requester,
                 RequestedAtUtc = Now,
@@ -116,8 +135,16 @@ namespace SystemPanel.Automation
                 CorrelationId = System.Diagnostics.Activity.Current?.Id is { } aid ? Truncate(aid, 64) : null,
             };
 
+            if (isAgent)
+            {
+                // Agent işleri agent'ın almasını bekler; alınmazsa (agent kapalı) son tarihte Expired olur.
+                // Önizleme agent'ta çalışır; sonucu geldikten sonra onaya düşer (CompleteAgentCommandAsync).
+                run.ApprovalExpiresAtUtc = Now.AddHours(Math.Clamp(_options.ApprovalExpiryHours, 1, 24 * 14));
+                if (package.Manifest.SupportsDryRun)
+                    run.Status = RunbookRunStatus.PreviewPending;
+            }
             // Önizleme: değişiklik yapmadan planı gösterir. Yüksek riskte zorunludur (manifest doğrulaması).
-            if (package.Manifest.SupportsDryRun)
+            else if (package.Manifest.SupportsDryRun)
             {
                 var timeout = TimeSpan.FromSeconds(Math.Min(package.Manifest.TimeoutSeconds, MaxPreviewSeconds));
                 var preview = await SafeRunAsync(package, bound, dryRun: true, timeout, ct);
@@ -173,7 +200,11 @@ namespace SystemPanel.Automation
             });
 
             if (run.Approvals.Count(a => a.Decision == "approved") >= run.RequiredApprovals)
+            {
                 run.Status = RunbookRunStatus.Approved;
+                if (run.TargetAgentId != null)
+                    run.ApprovalExpiresAtUtc = Now.AddHours(Math.Clamp(_options.ApprovalExpiryHours, 1, 24 * 14));
+            }
 
             await _db.SaveChangesAsync(ct);
 
@@ -236,11 +267,11 @@ namespace SystemPanel.Automation
             if (!isOwner && !await _permissions.HasPermissionAsync(user, Permissions.AutomationManage, ct))
                 return RunbookOperationResult.Fail("Yalnızca talep eden kişi veya otomasyon yöneticisi iptal edebilir.");
 
-            if (run.Status is not (RunbookRunStatus.PendingApproval or RunbookRunStatus.Approved))
+            if (run.Status is not (RunbookRunStatus.PendingApproval or RunbookRunStatus.Approved or RunbookRunStatus.PreviewPending))
                 return RunbookOperationResult.Fail("Bu aşamadaki talep iptal edilemez.");
 
             var updated = await _db.RunbookRuns
-                .Where(r => r.Id == run.Id && (r.Status == RunbookRunStatus.PendingApproval || r.Status == RunbookRunStatus.Approved))
+                .Where(r => r.Id == run.Id && (r.Status == RunbookRunStatus.PendingApproval || r.Status == RunbookRunStatus.Approved || r.Status == RunbookRunStatus.PreviewPending))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(r => r.Status, RunbookRunStatus.Cancelled)
                     .SetProperty(r => r.FinishedAtUtc, Now), ct);
@@ -277,6 +308,13 @@ namespace SystemPanel.Automation
                 return error ?? "Runbook doğrulanamadı.";
 
             var scope = await _scopes.ResolveAsync(user, ct);
+            if (package.Manifest.Executor == RunbookExecutors.Agent)
+            {
+                var agent = run.TargetAgentId == null ? null : await _db.Agents.AsNoTracking().FirstOrDefaultAsync(a => a.Id == run.TargetAgentId, ct);
+                if (agent == null || !AgentInScope(user, scope, agent))
+                    return "Hedef sunucu sizin yetki kapsamınızda değil.";
+            }
+
             var rebound = RunbookParameterBinder.Bind(package.Manifest, ToInput(run.ParametersJson), scope);
             if (!rebound.IsValid)
                 return "Talebin hedefi sizin yetki kapsamınızda değil: " + string.Join(" ", rebound.Errors);
@@ -307,7 +345,7 @@ namespace SystemPanel.Automation
         public async Task<bool> ExecuteNextAsync(CancellationToken ct = default)
         {
             var candidate = await _db.RunbookRuns
-                .Where(r => r.Status == RunbookRunStatus.Approved)
+                .Where(r => r.Status == RunbookRunStatus.Approved && r.TargetAgentId == null)
                 .OrderBy(r => r.RequestedAtUtc)
                 .Select(r => r.Id)
                 .FirstOrDefaultAsync(ct);
@@ -388,16 +426,24 @@ namespace SystemPanel.Automation
         public async Task<int> ExpirePendingAsync(CancellationToken ct = default)
         {
             var now = Now;
+            // Onay bekleyenler + agent'ın henüz almadığı işler (önizleme veya onaylı çalıştırma).
             var expired = await _db.RunbookRuns
-                .Where(r => r.Status == RunbookRunStatus.PendingApproval && r.ApprovalExpiresAtUtc != null && r.ApprovalExpiresAtUtc < now)
-                .Select(r => r.Id)
+                .Where(r => r.ApprovalExpiresAtUtc != null && r.ApprovalExpiresAtUtc < now &&
+                            (r.Status == RunbookRunStatus.PendingApproval ||
+                             (r.TargetAgentId != null && (r.Status == RunbookRunStatus.PreviewPending || r.Status == RunbookRunStatus.Approved))))
+                .Select(r => new { r.Id, r.Status })
                 .ToListAsync(ct);
 
-            foreach (var id in expired)
+            foreach (var item in expired)
             {
+                var id = item.Id;
+                var error = item.Status == RunbookRunStatus.PendingApproval ? null : "Agent işi süresi içinde almadı (sunucu kapalı veya otomasyon kapalı olabilir).";
                 var updated = await _db.RunbookRuns
-                    .Where(r => r.Id == id && r.Status == RunbookRunStatus.PendingApproval)
-                    .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, RunbookRunStatus.Expired).SetProperty(r => r.FinishedAtUtc, now), ct);
+                    .Where(r => r.Id == id && r.Status == item.Status)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(r => r.Status, RunbookRunStatus.Expired)
+                        .SetProperty(r => r.FinishedAtUtc, now)
+                        .SetProperty(r => r.Error, error), ct);
                 if (updated == 0)
                     continue;
 
@@ -413,6 +459,47 @@ namespace SystemPanel.Automation
             return expired.Count;
         }
 
+        /// <summary>
+        /// Agent'a teslim edilmiş ama son tarihe kadar sonucu bildirilmemiş işler. Betik çalışmış olabilir;
+        /// sonuç bilinmediği için yeniden çalıştırılmaz.
+        /// </summary>
+        public async Task<int> ExpireOverdueDispatchesAsync(CancellationToken ct = default)
+        {
+            var now = Now;
+            var overdue = await _db.RunbookRuns
+                .Where(r => r.DeadlineUtc != null && r.DeadlineUtc < now &&
+                            (r.Status == RunbookRunStatus.PreviewRunning || r.Status == RunbookRunStatus.Dispatched))
+                .Select(r => new { r.Id, r.Status })
+                .ToListAsync(ct);
+
+            foreach (var item in overdue)
+            {
+                var preview = item.Status == RunbookRunStatus.PreviewRunning;
+                var updated = await _db.RunbookRuns
+                    .Where(r => r.Id == item.Id && r.Status == item.Status)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(r => r.Status, preview ? RunbookRunStatus.PreviewFailed : RunbookRunStatus.TimedOut)
+                        .SetProperty(r => r.FinishedAtUtc, now)
+                        .SetProperty(r => r.Error, preview
+                            ? "Agent önizleme sonucunu süresi içinde bildirmedi."
+                            : "Agent sonucu süresi içinde bildirmedi; iş çalışmış olabilir. Hedef sunucuyu kontrol edin."), ct);
+                if (updated == 0)
+                    continue;
+
+                await _audit.RecordAsync(new AuditRecord(AuditActions.AutomationRunCompleted)
+                {
+                    ResourceType = "RunbookRun",
+                    ResourceId = item.Id.ToString(),
+                    Success = false,
+                    ErrorMessage = "Agent sonucu bildirmedi.",
+                    ActorUserName = "automation",
+                    ActorType = "System",
+                }, ct);
+            }
+
+            return overdue.Count;
+        }
+
         /// <summary>Uygulama yeniden başlatıldığında yarıda kalan işler: sonucu bilinmediği için Failed (yeniden çalıştırılmaz).</summary>
         public async Task<int> FailInterruptedAsync(CancellationToken ct = default)
             => await _db.RunbookRuns
@@ -421,6 +508,181 @@ namespace SystemPanel.Automation
                     .SetProperty(r => r.Status, RunbookRunStatus.Failed)
                     .SetProperty(r => r.FinishedAtUtc, Now)
                     .SetProperty(r => r.Error, "Uygulama yeniden başladığında çalışma yarıda kaldı; sonuç bilinmiyor. Hedefi kontrol edin."), ct);
+
+        // ------------------------------------------------------------------ Agent çalıştırıcısı (Faz 2)
+        private const int DispatchGraceSeconds = 300;
+
+        /// <summary>
+        /// Agent kapsamı: global kapsam → tüm agent'lar; aksi halde agent'ın birimi (Province) kullanıcının
+        /// birim claim'lerinden (sp:province) biriyle eşleşmeli. Birimi atanmamış agent yalnızca global kapsamla hedeflenir.
+        /// </summary>
+        public static bool AgentInScope(ClaimsPrincipal user, OrganizationalScope scope, Agent agent)
+        {
+            if (scope.IsGlobal)
+                return true;
+            if (string.IsNullOrWhiteSpace(agent.Province))
+                return false;
+            return user.FindAll(ScopeClaimTypes.Province)
+                .Any(c => string.Equals(c.Value?.Trim(), agent.Province.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>Kullanıcının hedefleyebileceği etkin agent'lar.</summary>
+        public async Task<IReadOnlyList<Agent>> ListTargetAgentsAsync(ClaimsPrincipal user, CancellationToken ct = default)
+        {
+            var scope = await _scopes.ResolveAsync(user, ct);
+            var agents = await _db.Agents.AsNoTracking().Where(a => a.IsEnabled).OrderBy(a => a.Hostname).ToListAsync(ct);
+            return agents.Where(a => AgentInScope(user, scope, a)).ToList();
+        }
+
+        /// <summary>
+        /// Agent'a atanmış sıradaki işi (önizleme veya onaylı çalıştırma) atomik olarak teslim eder.
+        /// Paket teslimden hemen önce yeniden doğrulanır (anahtar iptal edildiyse iş başarısız olur).
+        /// </summary>
+        public async Task<AgentCommand?> ClaimNextForAgentAsync(Agent agent, CancellationToken ct = default)
+        {
+            for (var attempt = 0; attempt < 10; attempt++)
+            {
+                var candidate = await _db.RunbookRuns.AsNoTracking()
+                    .Include(r => r.RunbookVersion)
+                    .Where(r => r.TargetAgentId == agent.Id &&
+                                (r.Status == RunbookRunStatus.PreviewPending || r.Status == RunbookRunStatus.Approved))
+                    .OrderBy(r => r.RequestedAtUtc)
+                    .FirstOrDefaultAsync(ct);
+                if (candidate == null)
+                    return null;
+
+                var preview = candidate.Status == RunbookRunStatus.PreviewPending;
+                var (package, error) = await _catalog.VerifyAsync(candidate.RunbookVersion!, ct);
+                if (package == null || package.Manifest.Executor != RunbookExecutors.Agent)
+                {
+                    await _db.RunbookRuns
+                        .Where(r => r.Id == candidate.Id && r.Status == candidate.Status)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(r => r.Status, preview ? RunbookRunStatus.PreviewFailed : RunbookRunStatus.Failed)
+                            .SetProperty(r => r.FinishedAtUtc, Now)
+                            .SetProperty(r => r.Error, error ?? "Runbook agent çalıştırıcısı için değil."), ct);
+                    continue;
+                }
+
+                var timeout = preview ? Math.Min(package.Manifest.TimeoutSeconds, MaxPreviewSeconds) : package.Manifest.TimeoutSeconds;
+                var now = Now;
+                var deadline = now.AddSeconds(timeout + DispatchGraceSeconds);
+                var claimQuery = _db.RunbookRuns.Where(r => r.Id == candidate.Id && r.Status == candidate.Status && r.TargetAgentId == agent.Id);
+                var claimed = preview
+                    ? await claimQuery.ExecuteUpdateAsync(s => s
+                        .SetProperty(r => r.Status, RunbookRunStatus.PreviewRunning)
+                        .SetProperty(r => r.DispatchedAtUtc, now)
+                        .SetProperty(r => r.DeadlineUtc, deadline), ct)
+                    : await claimQuery.ExecuteUpdateAsync(s => s
+                        .SetProperty(r => r.Status, RunbookRunStatus.Dispatched)
+                        .SetProperty(r => r.DispatchedAtUtc, now)
+                        .SetProperty(r => r.DeadlineUtc, deadline)
+                        .SetProperty(r => r.StartedAtUtc, now), ct);
+                if (claimed == 0)
+                    continue;
+
+                if (!preview)
+                {
+                    await _audit.RecordAsync(new AuditRecord(AuditActions.AutomationRunStarted)
+                    {
+                        ResourceType = "RunbookRun",
+                        ResourceId = candidate.Id.ToString(),
+                        ResourceName = Describe(candidate),
+                        Scope = candidate.TargetSummary,
+                        ActorUserName = agent.Hostname,
+                        ActorType = "Agent",
+                    }, ct);
+                }
+
+                var input = ToInput(candidate.ParametersJson);
+                var stored = RunbookParameterCore.Bind(package.Manifest, input, null);
+                return new AgentCommand
+                {
+                    RunId = candidate.Id,
+                    Package = candidate.RunbookVersion!.PackageText,
+                    Values = stored.Values.ToDictionary(kv => kv.Key, kv => kv.Value),
+                    Switches = stored.Switches.ToList(),
+                    DryRun = preview,
+                    TimeoutSeconds = timeout,
+                };
+            }
+
+            return null;
+        }
+
+        /// <summary>Agent'ın bildirdiği sonucu işler. Dönüş: 204 (kabul), 404 (iş bu agent'ın değil), 409 (beklenmeyen durum).</summary>
+        public async Task<int> CompleteAgentCommandAsync(Agent agent, Guid runId, AgentCommandResult result, CancellationToken ct = default)
+        {
+            var run = await _db.RunbookRuns.AsNoTracking().Include(r => r.RunbookVersion).FirstOrDefaultAsync(r => r.Id == runId, ct);
+            if (run == null || run.TargetAgentId != agent.Id)
+                return 404;
+
+            var expected = result.DryRun ? RunbookRunStatus.PreviewRunning : RunbookRunStatus.Dispatched;
+            if (run.Status != expected)
+                return 409;
+
+            var scriptResult = new RunbookScriptResult(result.ExitCode, result.StdOut ?? string.Empty, result.StdErr ?? string.Empty, result.TimedOut);
+            var output = SanitizedOutput(scriptResult);
+            var ok = scriptResult.Succeeded && !result.RejectedByAgent;
+            var now = Now;
+            string? error = null;
+            if (!ok)
+            {
+                var stderr = Truncate(RunbookOutputSanitizer.Sanitize(result.StdErr, 4000), 1800);
+                error = result.RejectedByAgent ? "Agent işi reddetti: " + stderr
+                    : !string.IsNullOrWhiteSpace(stderr) ? stderr
+                    : result.TimedOut ? "Zaman aşımı." : $"Çıkış kodu {result.ExitCode}.";
+            }
+
+            int updated;
+            if (result.DryRun)
+            {
+                var next = !ok ? RunbookRunStatus.PreviewFailed
+                    : run.RequiredApprovals == 0 ? RunbookRunStatus.Approved : RunbookRunStatus.PendingApproval;
+                var expires = now.AddHours(Math.Clamp(_options.ApprovalExpiryHours, 1, 24 * 14));
+                updated = await _db.RunbookRuns
+                    .Where(r => r.Id == runId && r.Status == expected)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(r => r.Status, next)
+                        .SetProperty(r => r.PreviewOutput, output)
+                        .SetProperty(r => r.Error, error)
+                        .SetProperty(r => r.DispatchedAtUtc, (DateTime?)null)
+                        .SetProperty(r => r.DeadlineUtc, (DateTime?)null)
+                        .SetProperty(r => r.ApprovalExpiresAtUtc, ok ? expires : null)
+                        .SetProperty(r => r.FinishedAtUtc, ok ? null : now), ct);
+            }
+            else
+            {
+                var next = result.TimedOut ? RunbookRunStatus.TimedOut : ok ? RunbookRunStatus.Succeeded : RunbookRunStatus.Failed;
+                updated = await _db.RunbookRuns
+                    .Where(r => r.Id == runId && r.Status == expected)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(r => r.Status, next)
+                        .SetProperty(r => r.Output, output)
+                        .SetProperty(r => r.Error, error)
+                        .SetProperty(r => r.ExitCode, result.RejectedByAgent ? null : result.ExitCode)
+                        .SetProperty(r => r.DeadlineUtc, (DateTime?)null)
+                        .SetProperty(r => r.FinishedAtUtc, now), ct);
+            }
+
+            if (updated == 0)
+                return 409;
+
+            await _audit.RecordAsync(new AuditRecord(result.DryRun ? AuditActions.AutomationRunPreview : AuditActions.AutomationRunCompleted)
+            {
+                ResourceType = "RunbookRun",
+                ResourceId = runId.ToString(),
+                ResourceName = Describe(run),
+                Scope = run.TargetSummary,
+                Success = ok,
+                ErrorMessage = error,
+                ActorUserName = agent.Hostname,
+                ActorType = "Agent",
+                After = new { result.ExitCode, result.TimedOut, result.RejectedByAgent },
+            }, ct);
+
+            return 204;
+        }
 
         // ------------------------------------------------------------------ Görünürlük
         /// <summary>
@@ -440,7 +702,7 @@ namespace SystemPanel.Automation
                 run.Approvals.Any(a => string.Equals(a.Approver, name, StringComparison.OrdinalIgnoreCase)))
                 return true;
 
-            return await TargetsInScopeAsync(run, scope, new Dictionary<Guid, RunbookManifest?>(), ct);
+            return await TargetsInScopeAsync(user, run, scope, new Dictionary<Guid, RunbookManifest?>(), ct);
         }
 
         public async Task<IReadOnlyList<RunbookRun>> ListVisibleAsync(ClaimsPrincipal user, string? status, int take = 200, CancellationToken ct = default)
@@ -467,7 +729,7 @@ namespace SystemPanel.Automation
                     break;
                 if (string.Equals(run.RequestedBy, name, StringComparison.OrdinalIgnoreCase) ||
                     run.Approvals.Any(a => string.Equals(a.Approver, name, StringComparison.OrdinalIgnoreCase)) ||
-                    await TargetsInScopeAsync(run, scope, manifests, ct))
+                    await TargetsInScopeAsync(user, run, scope, manifests, ct))
                     visible.Add(run);
             }
             return visible;
@@ -488,8 +750,14 @@ namespace SystemPanel.Automation
                 .ToList();
         }
 
-        private async Task<bool> TargetsInScopeAsync(RunbookRun run, OrganizationalScope scope, Dictionary<Guid, RunbookManifest?> cache, CancellationToken ct)
+        private async Task<bool> TargetsInScopeAsync(ClaimsPrincipal user, RunbookRun run, OrganizationalScope scope, Dictionary<Guid, RunbookManifest?> cache, CancellationToken ct)
         {
+            if (run.TargetAgentId != null)
+            {
+                var agent = await _db.Agents.AsNoTracking().FirstOrDefaultAsync(a => a.Id == run.TargetAgentId, ct);
+                return agent != null && AgentInScope(user, scope, agent);
+            }
+
             if (scope.IsEmpty)
                 return false;
 

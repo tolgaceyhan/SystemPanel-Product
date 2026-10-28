@@ -97,6 +97,14 @@ namespace SystemPanel.Models
         public const string Expired = "Expired";
         public const string PreviewFailed = "PreviewFailed";
 
+        // Agent çalıştırıcısı (ADR-002 Faz 2)
+        /// <summary>Önizleme agent'ın almasını bekliyor.</summary>
+        public const string PreviewPending = "PreviewPending";
+        /// <summary>Önizleme agent'ta çalışıyor.</summary>
+        public const string PreviewRunning = "PreviewRunning";
+        /// <summary>İş agent'a teslim edildi, sonuç bekleniyor.</summary>
+        public const string Dispatched = "Dispatched";
+
         public static readonly IReadOnlyCollection<string> Terminal = new[] { Succeeded, Failed, TimedOut, Rejected, Cancelled, Expired, PreviewFailed };
     }
 
@@ -145,6 +153,15 @@ namespace SystemPanel.Models
 
         [MaxLength(64)]
         public string? CorrelationId { get; set; }
+
+        /// <summary>Agent çalıştırıcılı runbook'larda hedef agent.</summary>
+        public Guid? TargetAgentId { get; set; }
+
+        /// <summary>İşin (önizleme veya çalıştırma) agent'a teslim edildiği an.</summary>
+        public DateTime? DispatchedAtUtc { get; set; }
+
+        /// <summary>Teslim edilen iş için sonuç son tarihi (zaman aşımı + pay). Geçerse iş zaman aşımına düşer.</summary>
+        public DateTime? DeadlineUtc { get; set; }
 
         public List<RunbookApproval> Approvals { get; set; } = new();
     }

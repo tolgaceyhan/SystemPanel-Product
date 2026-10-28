@@ -835,6 +835,12 @@ namespace SystemPanel.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<DateTime?>("DeadlineUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DispatchedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Error")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -881,6 +887,9 @@ namespace SystemPanel.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<Guid?>("TargetAgentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("TargetSummary")
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
@@ -892,6 +901,8 @@ namespace SystemPanel.Migrations
                     b.HasIndex("RunbookVersionId");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("TargetAgentId", "Status");
 
                     b.ToTable("RunbookRuns");
                 });

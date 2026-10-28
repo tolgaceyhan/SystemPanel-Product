@@ -89,6 +89,37 @@ namespace SystemPanel.Controllers.Api
             return Accepted();
         }
 
+        // ------------------------------------------------------------------ Otomasyon (ADR-002 Faz 2)
+        /// <summary>Bu agent'a atanmış sıradaki runbook işi. İş yoksa 204.</summary>
+        [HttpPost("/" + AgentApi.NextCommandPath)]
+        public async Task<IActionResult> NextCommand([FromServices] SystemPanel.Automation.RunbookRunService runs, CancellationToken ct)
+        {
+            var agent = await CurrentAgentAsync(ct);
+            if (agent == null)
+                return Unauthorized();
+
+            var command = await runs.ClaimNextForAgentAsync(agent, ct);
+            return command == null ? NoContent() : Ok(command);
+        }
+
+        /// <summary>İş sonucu. Yalnızca işi teslim alan agent, beklenen aşamada sonuç bildirebilir.</summary>
+        [HttpPost("/api/v1/agents/commands/{runId:guid}/result")]
+        [RequestSizeLimit(1024 * 1024)]
+        public async Task<IActionResult> CommandResult(Guid runId, [FromBody] AgentCommandResult result,
+            [FromServices] SystemPanel.Automation.RunbookRunService runs, CancellationToken ct)
+        {
+            var agent = await CurrentAgentAsync(ct);
+            if (agent == null)
+                return Unauthorized();
+
+            return await runs.CompleteAgentCommandAsync(agent, runId, result, ct) switch
+            {
+                204 => NoContent(),
+                404 => NotFound(),
+                _ => Conflict(),
+            };
+        }
+
         private async Task<Models.Agent?> CurrentAgentAsync(CancellationToken ct)
         {
             var id = User.FindFirst(AgentAuthentication.AgentIdClaim)?.Value;

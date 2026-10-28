@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Otomasyon çalıştırmaları";
     var status = ViewBag.Status as string;
-    var statuses = new[] { "PendingApproval", "Approved", "Running", "Succeeded", "Failed", "TimedOut", "Rejected", "Cancelled", "Expired", "PreviewFailed" };
+    var statuses = new[] { "PreviewPending", "PreviewRunning", "PendingApproval", "Approved", "Dispatched", "Running", "Succeeded", "Failed", "TimedOut", "Rejected", "Cancelled", "Expired", "PreviewFailed" };
 }
 
 <div class="d-flex justify-content-between align-items-center mt-2 mb-3">

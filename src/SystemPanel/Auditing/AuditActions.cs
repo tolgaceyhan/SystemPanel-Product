@@ -67,6 +67,7 @@ namespace SystemPanel.Auditing
         public const string AutomationRunRejected = "automation.run.rejected";
         public const string AutomationRunCancelled = "automation.run.cancelled";
         public const string AutomationRunExpired = "automation.run.expired";
+        public const string AutomationRunPreview = "automation.run.preview";
         public const string AutomationRunStarted = "automation.run.started";
         public const string AutomationRunCompleted = "automation.run.completed";
     }

@@ -369,6 +369,7 @@ FodyWeavers.xsd
 # ---------------------------------------------------------------
 appsettings.*.json
 !appsettings.*.example.json
+!appsettings.example.json
 secrets*.json
 *.pfx
 *.key

@@ -35,10 +35,11 @@ $name = "SystemPanel-$Version"
 $stage = Join-Path $OutputRoot $name
 $numericVersion = ($Version -split '-')[0]
 
+# Bilinçli olarak param() bloğu yok: "-o", "-c" gibi dotnet argümanları PowerShell parametresi
+# olarak yorumlanmadan $args ile olduğu gibi aktarılır.
 function Invoke-Dotnet {
-    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
-    & dotnet @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "dotnet $($Arguments -join ' ') başarısız (çıkış kodu $LASTEXITCODE)." }
+    & dotnet @args
+    if ($LASTEXITCODE -ne 0) { throw "dotnet $($args -join ' ') başarısız (çıkış kodu $LASTEXITCODE)." }
 }
 
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }

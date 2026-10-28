@@ -10,6 +10,8 @@
       dashboard\  NOC ekranı (self-contained, win-x64)
       database\   migrate.sql (idempotent; DBA için) + efbundle.exe (otomatik uygulama için)
       scripts\    Kurulum/kaldırma ve yardımcı betikler
+      tools\      sprunbook.exe (kurum runbook'larını imzalama aracı; lisans üretme yeteneği yoktur)
+      runbook-examples\  Kurum runbook'ları için örnek kaynaklar (imzasız; kurum kendi anahtarıyla imzalar)
       docs\       Kurulum belgeleri, THIRD-PARTY-NOTICES.md, appsettings.Production.example.json
 
     -SigningCertThumbprint verilirse üretilen .exe/.dll dosyaları signtool ile imzalanır
@@ -83,6 +85,10 @@ try {
     Invoke-Dotnet ef migrations script --idempotent --project src/SystemPanel --output (Join-Path $db 'migrate.sql')
     Invoke-Dotnet ef migrations bundle --project src/SystemPanel -r win-x64 --self-contained --force --output (Join-Path $db 'efbundle.exe')
 
+    # Kurum runbook aracı ve örnekleri (ADR-002 Faz 4). splicense (lisans üretici) pakete GİRMEZ.
+    Invoke-Dotnet publish tools/SystemPanel.RunbookTool/SystemPanel.RunbookTool.csproj @common -p:PublishSingleFile=true -o (Join-Path $stage 'tools')
+    Copy-Item runbooks/examples (Join-Path $stage 'runbook-examples') -Recurse
+
     $scripts = New-Item -ItemType Directory -Path (Join-Path $stage 'scripts')
     Copy-Item scripts/*.ps1 $scripts
 
@@ -94,7 +100,7 @@ try {
     if ($SigningCertThumbprint) {
         $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
         if (-not $signtool) { throw 'signtool.exe bulunamadı (Windows SDK gerekli).' }
-        $targets = Get-ChildItem $stage -Recurse -Include 'SystemPanel*.exe', 'SystemPanel*.dll', 'efbundle.exe'
+        $targets = Get-ChildItem $stage -Recurse -Include 'SystemPanel*.exe', 'SystemPanel*.dll', 'sprunbook.exe', 'efbundle.exe'
         $signArgs = @('sign', '/sha1', $SigningCertThumbprint, '/fd', 'SHA256')
         if ($TimestampUrl) { $signArgs += @('/tr', $TimestampUrl, '/td', 'SHA256') }
         & $signtool.Source @signArgs @($targets.FullName)

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Kurum runbook aracı (ADR-002 Faz 4): anahtar üretir, iskelet oluşturur, denetler, imzalar ve doğrular.
+       Müşteriye dağıtılır; lisans üretme yeteneği YOKTUR (o splicense'tadır ve yalnızca üreticide kalır). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>sprunbook</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SystemPanel.Contracts\SystemPanel.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

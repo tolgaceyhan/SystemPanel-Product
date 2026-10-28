@@ -122,6 +122,8 @@ public static class RunbookSource
             Warn("Description boş; katalogda ve onay ekranında ne yapıldığını açıklayın.");
         if (m.Risk != RunbookRisks.Low && !m.SupportsDryRun)
             Warn("Orta riskli runbook'larda da önizleme (SupportsDryRun) önerilir.");
+        if ((m.Description ?? string.Empty).Contains("TODO", StringComparison.Ordinal) || source.Script.Contains("TODO", StringComparison.Ordinal))
+            Warn("İskeletten kalan TODO bölümleri var.");
         foreach (var p in m.Parameters.Where(p => p.Type == RunbookParameterTypes.String && p.Pattern == null && p.Values.Count == 0))
             Warn($"Parametre '{p.Name}': string parametrelerde Pattern tanımlayın.");
 

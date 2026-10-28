@@ -10,7 +10,8 @@ using SystemPanel.Contracts.Licensing;
 //                    [--max-agents 100] [--features ad,laps,gpo] [--id <lisans-no>]
 //   splicense verify --public <public.pem> --license <dosya.lic>
 //
-// Runbook paketleri (ADR-002; lisans anahtarından AYRI bir anahtar çifti kullanılır):
+// Üretici runbook kataloğu (ADR-002; lisans anahtarından AYRI bir anahtar çifti kullanılır). Kurumlar kendi
+// runbook'ları için ayrı dağıtılan `sprunbook` aracını kullanır (tools/SystemPanel.RunbookTool).
 //   splicense runbook-keygen   --out <klasör>
 //   splicense runbook-sign     --key <runbook-signing.private.pem> --source <runbook klasörü> --out <paket.sprb>
 //   splicense runbook-sign-all --key <runbook-signing.private.pem> --source runbooks/src --out <klasör>
@@ -144,31 +145,32 @@ static int RunbookSignAll(Dictionary<string, string> o)
     using var key = ECDsa.Create();
     key.ImportFromPem(File.ReadAllText(Required(o, "key")));
     var outDir = Required(o, "out");
-    Directory.CreateDirectory(outDir);
 
-    var count = 0;
-    foreach (var dir in Directory.GetDirectories(Required(o, "source")).OrderBy(d => d, StringComparer.Ordinal))
+    // Önce hepsi denetlenir ve imzalanır; biri bile hatalıysa hiçbir paket yazılmaz.
+    var packages = new List<(string Name, string Text, string Id, string Version)>();
+    foreach (var dir in SystemPanel.Contracts.Automation.RunbookSource.FindDirectories(Required(o, "source")))
     {
-        if (!File.Exists(Path.Combine(dir, "manifest.json")))
-            continue;
-        var name = Path.GetFileName(dir);
-        var (id, version) = SignRunbookDirectory(dir, key, Path.Combine(outDir, name + ".sprb"));
-        Console.WriteLine($"İmzalandı: {id}@{version}");
-        count++;
+        var source = SystemPanel.Contracts.Automation.RunbookSource.Load(dir);
+        var text = SystemPanel.Contracts.Automation.RunbookSource.Sign(source, key, organization: false, out _);
+        packages.Add((Path.GetFileName(dir), text, source.Manifest.Id, source.Manifest.Version));
     }
-    Console.WriteLine($"{count} runbook imzalandı -> {outDir}");
-    return count > 0 ? 0 : 1;
+
+    Directory.CreateDirectory(outDir);
+    foreach (var (name, text, id, version) in packages)
+    {
+        File.WriteAllText(Path.Combine(outDir, name + ".sprb"), text);
+        Console.WriteLine($"İmzalandı: {id}@{version}");
+    }
+    Console.WriteLine($"{packages.Count} runbook imzalandı -> {outDir}");
+    return packages.Count > 0 ? 0 : 1;
 }
 
+/// <summary>Üretici kataloğu: üretici denetim kuralları uygulanır (org. ön eki kullanılamaz). Denetim hatası varsa imzalanmaz.</summary>
 static (string Id, string Version) SignRunbookDirectory(string dir, ECDsa key, string outPath)
 {
-    var manifest = System.Text.Json.JsonSerializer.Deserialize<SystemPanel.Contracts.Automation.RunbookManifest>(
-        File.ReadAllText(Path.Combine(dir, "manifest.json")),
-        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-        ?? throw new ArgumentException($"{dir}: manifest okunamadı.");
-    var script = File.ReadAllText(Path.Combine(dir, "run.ps1"));
-    File.WriteAllText(outPath, SystemPanel.Contracts.Automation.RunbookPackageCodec.Sign(manifest, script, key));
-    return (manifest.Id, manifest.Version);
+    var source = SystemPanel.Contracts.Automation.RunbookSource.Load(dir);
+    File.WriteAllText(outPath, SystemPanel.Contracts.Automation.RunbookSource.Sign(source, key, organization: false, out _));
+    return (source.Manifest.Id, source.Manifest.Version);
 }
 
 static int RunbookVerify(Dictionary<string, string> o)

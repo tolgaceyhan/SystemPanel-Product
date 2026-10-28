@@ -62,7 +62,12 @@ jobs:
         if ($issues.Count -gt 0) { exit 1 }
     - name: Build release package
       shell: pwsh
-      run: ./build/Build-Release.ps1 -Version 0.0.0-ci.${{ github.run_number }} -SkipTests
+      run: |
+        ./build/Build-Release.ps1 -Version 0.0.0-ci.${{ github.run_number }} -SkipTests *>&1 | Tee-Object -FilePath build-release.log
+        if (-not $?) {
+          Get-Content build-release.log | Select-String -Pattern 'error|hata|başarısız|exception' | Select-Object -Last 20 | ForEach-Object { Write-Host "::error::$($_.Line.Trim())" }
+          exit 1
+        }
     - uses: actions/upload-artifact@v4
       with:
         name: systempanel-package

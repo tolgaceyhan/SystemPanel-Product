@@ -16,7 +16,8 @@ Hedef: kapalı ağda Windows Server, IIS (InProcess) veya Windows servisi, SQL S
 Sürüm paketi `SystemPanel-<sürüm>.zip` olarak gelir. Önce `SHA256SUMS.txt` ile bütünlüğünü doğrulayın, sonra açın:
 
 ```
-web\  agent\  dashboard\  database\ (migrate.sql, efbundle.exe)  scripts\  docs```
+web\  agent\  dashboard\  database\ (migrate.sql, efbundle.exe)  scripts\  docs\
+```
 
 Yönetici PowerShell'de:
 

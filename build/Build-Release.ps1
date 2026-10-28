@@ -86,7 +86,7 @@ try {
     Invoke-Dotnet ef migrations bundle --project src/SystemPanel -r win-x64 --self-contained --force --output (Join-Path $db 'efbundle.exe')
 
     # Kurum runbook aracı ve örnekleri (ADR-002 Faz 4). splicense (lisans üretici) pakete GİRMEZ.
-    Invoke-Dotnet publish tools/SystemPanel.RunbookTool/SystemPanel.RunbookTool.csproj @common -p:PublishSingleFile=true -o (Join-Path $stage 'tools')
+    Invoke-Dotnet publish tools/SystemPanel.RunbookTool/SystemPanel.RunbookTool.csproj @common '-p:PublishSingleFile=true' -o (Join-Path $stage 'tools')
     Copy-Item runbooks/examples (Join-Path $stage 'runbook-examples') -Recurse
 
     $scripts = New-Item -ItemType Directory -Path (Join-Path $stage 'scripts')

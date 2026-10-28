@@ -42,7 +42,7 @@ public static class RunbookTemplate
             parameters = new List<object>
             {
                 agent
-                    ? new { name = "Name", type = RunbookParameterTypes.String, label = "Ad", required = true, maxLength = 80, pattern = "[A-Za-z0-9_.-]{1,80}", help = "TODO" }
+                    ? new { name = "Name", type = RunbookParameterTypes.String, label = "Ad", required = true, maxLength = 80, pattern = (string?)"[A-Za-z0-9_.-]{1,80}", help = "TODO" }
                     : new { name = "SearchBase", type = RunbookParameterTypes.AdDn, label = "Arama kökü (OU)", required = true, maxLength = 512, pattern = (string?)null, help = "Kapsamınızdaki bir OU" },
             },
         };

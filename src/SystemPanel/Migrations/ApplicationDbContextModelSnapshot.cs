@@ -879,6 +879,9 @@ namespace SystemPanel.Migrations
                     b.Property<Guid>("RunbookVersionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ScheduleId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("StartedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -900,11 +903,113 @@ namespace SystemPanel.Migrations
 
                     b.HasIndex("RunbookVersionId");
 
+                    b.HasIndex("ScheduleId");
+
                     b.HasIndex("Status");
 
                     b.HasIndex("TargetAgentId", "Status");
 
                     b.ToTable("RunbookRuns");
+                });
+
+            modelBuilder.Entity("SystemPanel.Models.RunbookSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AlarmDrive")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("AlarmMetric")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("CronExpression")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DecidedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("DisabledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisabledBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Justification")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("LastFiredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("LastRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MinIntervalMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("NextFireAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ParametersJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RunbookVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("TargetAgentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TargetSummary")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("TriggerType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunbookVersionId");
+
+                    b.HasIndex("Status", "NextFireAtUtc");
+
+                    b.HasIndex("TargetAgentId", "TriggerType", "Status");
+
+                    b.ToTable("RunbookSchedules");
                 });
 
             modelBuilder.Entity("SystemPanel.Models.RunbookSigningKey", b =>
@@ -1342,6 +1447,17 @@ namespace SystemPanel.Migrations
                 });
 
             modelBuilder.Entity("SystemPanel.Models.RunbookRun", b =>
+                {
+                    b.HasOne("SystemPanel.Models.RunbookVersion", "RunbookVersion")
+                        .WithMany()
+                        .HasForeignKey("RunbookVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RunbookVersion");
+                });
+
+            modelBuilder.Entity("SystemPanel.Models.RunbookSchedule", b =>
                 {
                     b.HasOne("SystemPanel.Models.RunbookVersion", "RunbookVersion")
                         .WithMany()

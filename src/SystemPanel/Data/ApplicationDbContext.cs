@@ -50,6 +50,7 @@ namespace SystemPanel.Data
         public DbSet<RunbookVersion> RunbookVersions => Set<RunbookVersion>();
         public DbSet<RunbookRun> RunbookRuns => Set<RunbookRun>();
         public DbSet<RunbookApproval> RunbookApprovals => Set<RunbookApproval>();
+        public DbSet<RunbookSchedule> RunbookSchedules => Set<RunbookSchedule>();
 
 
 
@@ -116,11 +117,19 @@ namespace SystemPanel.Data
                 e.HasIndex(v => new { v.RunbookId, v.Version }).IsUnique();
             });
 
+            modelBuilder.Entity<RunbookSchedule>(e =>
+            {
+                e.HasIndex(s => new { s.Status, s.NextFireAtUtc });
+                e.HasIndex(s => new { s.TargetAgentId, s.TriggerType, s.Status });
+                e.HasOne(s => s.RunbookVersion).WithMany().HasForeignKey(s => s.RunbookVersionId).OnDelete(DeleteBehavior.Restrict);
+            });
+
             modelBuilder.Entity<RunbookRun>(e =>
             {
                 e.HasIndex(r => r.Status);
                 e.HasIndex(r => r.RequestedAtUtc);
                 e.HasIndex(r => new { r.TargetAgentId, r.Status });
+                e.HasIndex(r => r.ScheduleId);
                 e.HasOne(r => r.RunbookVersion).WithMany().HasForeignKey(r => r.RunbookVersionId).OnDelete(DeleteBehavior.Restrict);
                 e.HasMany(r => r.Approvals).WithOne(a => a.Run).HasForeignKey(a => a.RunId).OnDelete(DeleteBehavior.Cascade);
             });

@@ -118,7 +118,28 @@ namespace SystemPanel.Automation
                 return RunbookOperationResult.Fail("Bu runbook bir hedef sunucu almaz.");
             }
 
-            var required = RequiredApprovalsFor(package.Manifest.Risk);
+            var run = await CreateRunAsync(version, package, bound, targetAgent, requester, justification,
+                RequiredApprovalsFor(package.Manifest.Risk), scheduleId: null, actorType: null, ct);
+            return new RunbookOperationResult(true, null, run);
+        }
+
+        /// <summary>
+        /// Çalıştırma kaydını oluşturur (talep ve zamanlama ortak yolu): durum, önizleme ve audit.
+        /// Parametreler, hedef ve yetki ÇAĞIRAN tarafından doğrulanmış olmalıdır.
+        /// </summary>
+        private async Task<RunbookRun> CreateRunAsync(
+            RunbookVersion version,
+            VerifiedRunbookPackage package,
+            BoundRunbookParameters bound,
+            Agent? targetAgent,
+            string requester,
+            string? justification,
+            int required,
+            Guid? scheduleId,
+            string? actorType,
+            CancellationToken ct)
+        {
+            var isAgent = targetAgent != null;
             var run = new RunbookRun
             {
                 Id = Guid.NewGuid(),
@@ -133,6 +154,7 @@ namespace SystemPanel.Automation
                 RequiredApprovals = required,
                 ApprovalExpiresAtUtc = required == 0 ? null : Now.AddHours(Math.Clamp(_options.ApprovalExpiryHours, 1, 24 * 14)),
                 CorrelationId = System.Diagnostics.Activity.Current?.Id is { } aid ? Truncate(aid, 64) : null,
+                ScheduleId = scheduleId,
             };
 
             if (isAgent)
@@ -168,10 +190,52 @@ namespace SystemPanel.Automation
                 Scope = run.TargetSummary,
                 Success = run.Status != RunbookRunStatus.PreviewFailed,
                 ErrorMessage = run.Error,
-                After = new { run.Status, version.Risk, run.RequiredApprovals, run.Justification },
+                After = new { run.Status, version.Risk, run.RequiredApprovals, run.Justification, run.ScheduleId },
+                ActorUserName = actorType == null ? null : requester,
+                ActorType = actorType,
             }, ct);
 
+            return run;
+
+        }
+
+        /// <summary>
+        /// Zamanlama/alarm tetiklemesiyle çalıştırma oluşturur (ADR-002 §5). Talep eden = zamanlamayı oluşturan kişi
+        /// (dört göz: kendi zamanlamasının işini onaylayamaz). Parametreler zamanlama oluşturulurken kapsamla doğrulandı;
+        /// burada imza/güven ve şema yeniden doğrulanır.
+        /// </summary>
+        public async Task<RunbookOperationResult> CreateScheduledRunAsync(RunbookSchedule schedule, int requiredApprovals, string trigger, CancellationToken ct = default)
+        {
+            var version = await _db.RunbookVersions.FirstOrDefaultAsync(v => v.Id == schedule.RunbookVersionId, ct);
+            if (version == null)
+                return RunbookOperationResult.Fail("Runbook sürümü bulunamadı.");
+
+            var (package, error) = await _catalog.VerifyAsync(version, ct);
+            if (package == null)
+                return RunbookOperationResult.Fail(error ?? "Runbook doğrulanamadı.");
+
+            var bound = RunbookParameterBinder.Bind(package.Manifest, ToInput(schedule.ParametersJson), OrganizationalScope.Global);
+            if (!bound.IsValid)
+                return new RunbookOperationResult(false, "Zamanlamanın parametreleri geçersiz.", null, bound.Errors);
+
+            Agent? agent = null;
+            if (package.Manifest.Executor == RunbookExecutors.Agent)
+            {
+                agent = schedule.TargetAgentId == null ? null : await _db.Agents.AsNoTracking().FirstOrDefaultAsync(a => a.Id == schedule.TargetAgentId, ct);
+                if (agent == null || !agent.IsEnabled)
+                    return RunbookOperationResult.Fail("Hedef agent bulunamadı veya devre dışı.");
+            }
+
+            var run = await CreateRunAsync(version, package, bound, agent, schedule.CreatedBy,
+                $"Zamanlama: {schedule.Name} ({trigger})", requiredApprovals, schedule.Id, "Schedule", ct);
             return new RunbookOperationResult(true, null, run);
+        }
+
+        /// <summary>Çalıştırma sonuçlandı mı (zamanlamanın üst üste binme kontrolü için).</summary>
+        public async Task<bool> IsTerminalAsync(Guid runId, CancellationToken ct = default)
+        {
+            var status = await _db.RunbookRuns.Where(r => r.Id == runId).Select(r => r.Status).FirstOrDefaultAsync(ct);
+            return status == null || RunbookRunStatus.Terminal.Contains(status);
         }
 
         // ------------------------------------------------------------------ Onay / Ret / İptal

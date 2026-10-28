@@ -154,6 +154,9 @@ namespace SystemPanel.Models
         [MaxLength(64)]
         public string? CorrelationId { get; set; }
 
+        /// <summary>Zamanlama/alarm tetiklemesiyle oluştuysa kaynağı (ADR-002 §5).</summary>
+        public Guid? ScheduleId { get; set; }
+
         /// <summary>Agent çalıştırıcılı runbook'larda hedef agent.</summary>
         public Guid? TargetAgentId { get; set; }
 
@@ -164,6 +167,86 @@ namespace SystemPanel.Models
         public DateTime? DeadlineUtc { get; set; }
 
         public List<RunbookApproval> Approvals { get; set; } = new();
+    }
+
+    public static class RunbookScheduleStatus
+    {
+        /// <summary>Orta/yüksek riskli zamanlama ikinci bir yetkilinin onayını bekliyor (dört göz).</summary>
+        public const string PendingApproval = "PendingApproval";
+        public const string Active = "Active";
+        public const string Rejected = "Rejected";
+        public const string Disabled = "Disabled";
+    }
+
+    public static class RunbookTriggerTypes
+    {
+        public const string Cron = "cron";
+        public const string Alarm = "alarm";
+    }
+
+    /// <summary>
+    /// Zamanlanmış veya alarm tetiklemeli runbook (ADR-002 §5). Parametre kümesi ve runbook sürümü
+    /// oluşturulurken sabitlenir; değiştirmek için yeni zamanlama oluşturulur.
+    /// </summary>
+    public class RunbookSchedule
+    {
+        public Guid Id { get; set; }
+
+        [Required, MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        public Guid RunbookVersionId { get; set; }
+        public RunbookVersion? RunbookVersion { get; set; }
+
+        public Guid? TargetAgentId { get; set; }
+
+        [Required]
+        public string ParametersJson { get; set; } = "{}";
+
+        [MaxLength(512)]
+        public string? TargetSummary { get; set; }
+
+        [Required, MaxLength(10)]
+        public string TriggerType { get; set; } = RunbookTriggerTypes.Cron;
+
+        [MaxLength(100)]
+        public string? CronExpression { get; set; }
+
+        /// <summary>Alarm tetikleyici: "cpu" | "ram" | "disk".</summary>
+        [MaxLength(10)]
+        public string? AlarmMetric { get; set; }
+
+        /// <summary>Disk alarmı için sürücü (ör. "C:"); boşsa tüm diskler.</summary>
+        [MaxLength(8)]
+        public string? AlarmDrive { get; set; }
+
+        /// <summary>İki tetikleme arasındaki en kısa süre.</summary>
+        public int MinIntervalMinutes { get; set; } = 60;
+
+        [Required, MaxLength(20)]
+        public string Status { get; set; } = RunbookScheduleStatus.PendingApproval;
+
+        [MaxLength(500)]
+        public string? Justification { get; set; }
+
+        [Required, MaxLength(256)]
+        public string CreatedBy { get; set; } = string.Empty;
+        public DateTime CreatedAtUtc { get; set; }
+
+        [MaxLength(256)]
+        public string? DecidedBy { get; set; }
+        public DateTime? DecidedAtUtc { get; set; }
+
+        [MaxLength(256)]
+        public string? DisabledBy { get; set; }
+        public DateTime? DisabledAtUtc { get; set; }
+
+        public DateTime? NextFireAtUtc { get; set; }
+        public DateTime? LastFiredAtUtc { get; set; }
+        public Guid? LastRunId { get; set; }
+
+        [MaxLength(500)]
+        public string? LastMessage { get; set; }
     }
 
     public class RunbookApproval

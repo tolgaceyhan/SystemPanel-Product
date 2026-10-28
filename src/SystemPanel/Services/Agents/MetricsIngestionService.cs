@@ -43,12 +43,16 @@ namespace SystemPanel.Services.Agents
         private readonly IMemoryCache _cache;
         private readonly MonitoringOptions _options;
         private readonly ILogger<MetricsIngestionService> _logger;
+        private readonly SystemPanel.Automation.AutomationAlarmQueue? _alarms;
+        private readonly List<SystemPanel.Automation.AutomationAlarm> _raised = new();
 
-        public MetricsIngestionService(ApplicationDbContext db, IMemoryCache cache, IOptions<MonitoringOptions> options, ILogger<MetricsIngestionService> logger)
+        public MetricsIngestionService(ApplicationDbContext db, IMemoryCache cache, IOptions<MonitoringOptions> options, ILogger<MetricsIngestionService> logger,
+            SystemPanel.Automation.AutomationAlarmQueue? alarms = null)
         {
             _db = db;
             _cache = cache;
             _options = options.Value;
+            _alarms = alarms;
             _logger = logger;
         }
 
@@ -135,14 +139,14 @@ namespace SystemPanel.Services.Agents
             {
                 latest.CpuUsage = cpu;
                 AddHistory(serverName, "cpu", cpu, null, sample.CollectedAtUtc);
-                if (cpu > thresholds.CpuPercent) CreateAlarm(serverName, "CPU", cpu);
+                if (cpu > thresholds.CpuPercent) CreateAlarm(serverName, "CPU", cpu, "cpu", null);
             }
 
             if (sample.RamPercent is int ram)
             {
                 latest.RamUsage = ram;
                 AddHistory(serverName, "ram", ram, null, sample.CollectedAtUtc);
-                if (ram > thresholds.RamPercent) CreateAlarm(serverName, "RAM", ram);
+                if (ram > thresholds.RamPercent) CreateAlarm(serverName, "RAM", ram, "ram", null);
             }
 
             if (sample.Disks.Count > 0)
@@ -157,7 +161,7 @@ namespace SystemPanel.Services.Agents
                         CreatedAt = sample.CollectedAtUtc,
                     });
                     AddHistory(serverName, "disk", usage, name, sample.CollectedAtUtc);
-                    if (usage > thresholds.DiskPercent) CreateAlarm(serverName, $"Disk {name}", usage);
+                    if (usage > thresholds.DiskPercent) CreateAlarm(serverName, $"Disk {name}", usage, "disk", name);
                 }
 
                 latest.DiskUsage = sample.Disks.Max(d => d.UsagePercent);
@@ -165,6 +169,14 @@ namespace SystemPanel.Services.Agents
 
             latest.LastUpdatedUtc = sample.CollectedAtUtc;
             await _db.SaveChangesAsync(ct);
+
+            // Otomasyon alarm tetikleyicileri (ADR-002 §5): yalnızca kayıt başarıyla yazıldıktan sonra, kayıplı kuyruğa.
+            if (_alarms != null)
+            {
+                foreach (var alarm in _raised)
+                    _alarms.Publish(alarm);
+            }
+            _raised.Clear();
         }
 
         private void AddHistory(string server, string type, int value, string? extra, DateTime at)
@@ -177,7 +189,7 @@ namespace SystemPanel.Services.Agents
                 CreatedAt = at,
             });
 
-        private void CreateAlarm(string server, string type, int value)
+        private void CreateAlarm(string server, string type, int value, string metric, string? drive)
         {
             var cacheKey = $"alarm:{server}:{type}";
             if (_cache.TryGetValue(cacheKey, out _)) return;
@@ -192,6 +204,7 @@ namespace SystemPanel.Services.Agents
                 CreatedAt = DateTime.UtcNow,
             });
 
+            _raised.Add(new SystemPanel.Automation.AutomationAlarm(server, metric, drive, value, DateTime.UtcNow));
             _logger.LogWarning("Alarm {Server} {Type} {Value}%", server, type, value);
         }
     }

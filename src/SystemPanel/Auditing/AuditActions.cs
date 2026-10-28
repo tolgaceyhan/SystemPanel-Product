@@ -70,5 +70,10 @@ namespace SystemPanel.Auditing
         public const string AutomationRunPreview = "automation.run.preview";
         public const string AutomationRunStarted = "automation.run.started";
         public const string AutomationRunCompleted = "automation.run.completed";
+        public const string AutomationScheduleCreate = "automation.schedule.create";
+        public const string AutomationScheduleApprove = "automation.schedule.approve";
+        public const string AutomationScheduleReject = "automation.schedule.reject";
+        public const string AutomationScheduleDisable = "automation.schedule.disable";
+        public const string AutomationScheduleFired = "automation.schedule.fired";
     }
 }

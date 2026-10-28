@@ -25,6 +25,20 @@ namespace SystemPanel.Automation
         /// <summary>Onaylanmış işlerin kuyruktan alınma aralığı.</summary>
         public int PollSeconds { get; set; } = 5;
 
+        /// <summary>Cron ifadelerinin değerlendirildiği saat dilimi (Windows veya IANA kimliği). Boşsa sunucunun yerel saati.</summary>
+        public string? ScheduleTimeZone { get; set; }
+
+        /// <summary>Zamanlamalar için izin verilen en kısa tetikleme aralığı (dakika).</summary>
+        public int MinScheduleIntervalMinutes { get; set; } = 5;
+
+        public TimeZoneInfo ResolveTimeZone()
+        {
+            if (string.IsNullOrWhiteSpace(ScheduleTimeZone))
+                return TimeZoneInfo.Local;
+            try { return TimeZoneInfo.FindSystemTimeZoneById(ScheduleTimeZone); }
+            catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException) { return TimeZoneInfo.Local; }
+        }
+
         public string ResolveWorkDirectory()
             => string.IsNullOrWhiteSpace(WorkDirectory)
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "SystemPanel", "Automation", "work")

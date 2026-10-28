@@ -19,17 +19,19 @@ namespace SystemPanel.Automation
         private readonly IServiceScopeFactory _scopes;
         private readonly AutomationOptions _options;
         private readonly ILogger<AutomationWorker> _logger;
+        private readonly AutomationAlarmQueue _alarms;
 
-        public AutomationWorker(IServiceScopeFactory scopes, IOptions<AutomationOptions> options, ILogger<AutomationWorker> logger)
+        public AutomationWorker(IServiceScopeFactory scopes, IOptions<AutomationOptions> options, ILogger<AutomationWorker> logger, AutomationAlarmQueue alarms)
         {
             _scopes = scopes;
+            _alarms = alarms;
             _options = options.Value;
             _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await RunInScopeAsync(async s =>
+            await RunInScopeAsync(async (s, _) =>
             {
                 var interrupted = await s.FailInterruptedAsync(stoppingToken);
                 if (interrupted > 0)
@@ -39,8 +41,13 @@ namespace SystemPanel.Automation
             var delay = TimeSpan.FromSeconds(Math.Clamp(_options.PollSeconds, 1, 300));
             while (!stoppingToken.IsCancellationRequested)
             {
-                await RunInScopeAsync(async s =>
+                await RunInScopeAsync(async (s, schedules) =>
                 {
+                    // Zamanlamalar ve alarm tetikleyicileri (ADR-002 §5) çalıştırma oluşturur; çalıştırmalar aşağıda işlenir.
+                    await schedules.FireDueAsync(stoppingToken);
+                    while (_alarms.TryRead(out var alarm) && alarm != null)
+                        await schedules.OnAlarmAsync(alarm, stoppingToken);
+
                     await s.ExpirePendingAsync(stoppingToken);
                     await s.ExpireOverdueDispatchesAsync(stoppingToken);
                     while (!stoppingToken.IsCancellationRequested && await s.ExecuteNextAsync(stoppingToken)) { }
@@ -51,12 +58,12 @@ namespace SystemPanel.Automation
             }
         }
 
-        private async Task RunInScopeAsync(Func<RunbookRunService, Task> action)
+        private async Task RunInScopeAsync(Func<RunbookRunService, RunbookScheduleService, Task> action)
         {
             try
             {
                 using var scope = _scopes.CreateScope();
-                await action(scope.ServiceProvider.GetRequiredService<RunbookRunService>());
+                await action(scope.ServiceProvider.GetRequiredService<RunbookRunService>(), scope.ServiceProvider.GetRequiredService<RunbookScheduleService>());
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

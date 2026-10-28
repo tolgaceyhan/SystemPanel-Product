@@ -8,6 +8,12 @@ public static class AgentApi
     public const string HeartbeatPath = "api/v1/agents/heartbeat";
     public const string MetricsPath = "api/v1/agents/metrics";
 
+    /// <summary>Agent'a atanmış sıradaki runbook işi (ADR-002 Faz 2). İş yoksa 204.</summary>
+    public const string NextCommandPath = "api/v1/agents/commands/next";
+
+    /// <summary>İş sonucu: <c>api/v1/agents/commands/{runId}/result</c>.</summary>
+    public const string CommandResultPathFormat = "api/v1/agents/commands/{0}/result";
+
     /// <summary>Agent kimliği (GUID). Kayıt sırasında SystemPanel tarafından verilir.</summary>
     public const string AgentIdHeader = "X-Agent-Id";
 
@@ -68,4 +74,30 @@ public sealed class DiskMetric
     public double UsagePercent { get; set; }
     public long? TotalBytes { get; set; }
     public long? FreeBytes { get; set; }
+}
+
+/// <summary>
+/// Agent'a gönderilen runbook işi. <see cref="Package"/> imzalı paketin kendisidir; agent imzayı kendi güvendiği
+/// anahtarlarla ve runbook kimliğini kendi yerel izin listesiyle doğrular (sunucuya körü körüne güvenmez).
+/// </summary>
+public sealed class AgentCommand
+{
+    public Guid RunId { get; set; }
+    public string Package { get; set; } = string.Empty;
+    public Dictionary<string, string> Values { get; set; } = new();
+    public List<string> Switches { get; set; } = new();
+    public bool DryRun { get; set; }
+    public int TimeoutSeconds { get; set; }
+}
+
+public sealed class AgentCommandResult
+{
+    public bool DryRun { get; set; }
+    public int ExitCode { get; set; }
+    public string StdOut { get; set; } = string.Empty;
+    public string StdErr { get; set; } = string.Empty;
+    public bool TimedOut { get; set; }
+
+    /// <summary>Agent işi yerel kurallar nedeniyle reddetti (izin listesi, imza, parametre). Betik çalışmadı.</summary>
+    public bool RejectedByAgent { get; set; }
 }

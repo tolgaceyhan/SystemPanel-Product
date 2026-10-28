@@ -22,7 +22,10 @@ public sealed class RunbookManifest
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
 
-    /// <summary>Şimdilik yalnızca <see cref="RunbookExecutors.Server"/> (ADR-002 Faz 1).</summary>
+    /// <summary>
+    /// <see cref="RunbookExecutors.Server"/>: web sunucusunda (AD/GPO işlemleri).
+    /// <see cref="RunbookExecutors.Agent"/>: hedef sunucudaki agent'ta (ADR-002 Faz 2); hedef türü <c>server</c> olmalıdır.
+    /// </summary>
     public string Executor { get; set; } = RunbookExecutors.Server;
 
     public string TargetType { get; set; } = RunbookTargetTypes.None;
@@ -79,7 +82,8 @@ public sealed class RunbookParameter
 public static class RunbookExecutors
 {
     public const string Server = "server";
-    public static readonly IReadOnlyList<string> All = new[] { Server };
+    public const string Agent = "agent";
+    public static readonly IReadOnlyList<string> All = new[] { Server, Agent };
 }
 
 public static class RunbookTargetTypes
@@ -88,7 +92,9 @@ public static class RunbookTargetTypes
     public const string AdUser = "ad-user";
     public const string AdComputer = "ad-computer";
     public const string AdOu = "ad-ou";
-    public static readonly IReadOnlyList<string> All = new[] { None, AdUser, AdComputer, AdOu };
+    /// <summary>Kayıtlı bir agent'ın bulunduğu sunucu (yalnızca agent çalıştırıcısı).</summary>
+    public const string Server = "server";
+    public static readonly IReadOnlyList<string> All = new[] { None, AdUser, AdComputer, AdOu, Server };
 }
 
 public static class RunbookRisks

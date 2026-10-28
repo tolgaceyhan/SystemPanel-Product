@@ -31,6 +31,15 @@ public static class RunbookManifestValidator
         if (m.Risk == RunbookRisks.High && !m.SupportsDryRun) errors.Add("Yüksek riskli runbook önizlemeyi (SupportsDryRun) desteklemeli.");
         if (requireScriptHash && !Sha256Hex.IsMatch(m.ScriptSha256 ?? string.Empty)) errors.Add("ScriptSha256 geçersiz.");
         if (m.Parameters.Count > 30) errors.Add("En fazla 30 parametre.");
+        if (m.Executor == RunbookExecutors.Agent)
+        {
+            if (m.TargetType != RunbookTargetTypes.Server) errors.Add("Agent runbook'larının hedef türü 'server' olmalı.");
+            if (m.Parameters.Any(p => p.Type == RunbookParameterTypes.AdDn)) errors.Add("Agent runbook'ları ad-dn parametresi alamaz.");
+        }
+        else if (m.TargetType == RunbookTargetTypes.Server)
+        {
+            errors.Add("'server' hedef türü yalnızca agent çalıştırıcısıyla kullanılır.");
+        }
 
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var p in m.Parameters)

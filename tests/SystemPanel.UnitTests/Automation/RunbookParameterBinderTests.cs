@@ -127,7 +127,7 @@ public sealed class RunbookScriptHostArgumentsTests
     [Fact]
     public void Arguments_UseFileAndSeparateValues()
     {
-        var bound = new SystemPanel.Automation.BoundRunbookParameters(
+        var bound = new SystemPanel.Contracts.Automation.BoundRunbookParameters(
             new Dictionary<string, string> { ["UserDn"] = "CN=Ali; Remove-Item C:\\,DC=x" },
             new[] { "Notify" },
             Array.Empty<string>());

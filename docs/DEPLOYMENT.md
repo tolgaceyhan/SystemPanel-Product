@@ -9,6 +9,7 @@ Hedef: kapalı ağda Windows Server, IIS (InProcess) veya Windows servisi, SQL S
 - SQL Server 2017+
 - AD'ye LDAPS (636) erişimi önerilir
 - GPO modülü için: RSAT Group Policy Management (`GroupPolicy` PowerShell modülü) ve yetkili hizmet hesabı
+- Otomasyon için: `RSAT-AD-PowerShell` ve uygulama havuzu kimliğine gereken OU'larda devredilmiş yetki (bkz. [AUTOMATION.md](AUTOMATION.md))
 - HTTPS sertifikası (kurum CA'sı), sunucunun `LocalMachine\My` deposunda
 
 ## 2. Hızlı kurulum (önerilen)

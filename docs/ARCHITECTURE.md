@@ -59,6 +59,16 @@ MetricsRetentionService (opsiyonel) → eski geçmiş/alarm kayıtlarını toplu
 AgentStatusService → AgentOfflineAfterSeconds'a göre çevrimiçi/çevrimdışı
 ```
 
+## Otomasyon (ADR-002)
+
+```
+Katalog (imzalı .sprb, güvenilen anahtarlar) ──► Talep (şema + kapsam) ──► Önizleme (-DryRun)
+   ──► Onay (dört göz, onaylayanın kapsamı) ──► Kuyruk ──► AutomationWorker
+   ──► imza yeniden doğrulanır ──► PowerShell -File (geçici, ACL'li dosya) ──► maskelenmiş çıktı + audit
+```
+
+Ayrıntı: [AUTOMATION.md](AUTOMATION.md).
+
 ## Kimlik doğrulama
 
 - **Kullanıcı:** ASP.NET Identity cookie (`SystemPanel.Auth`). Giriş `LoginService` ile AD'ye karşı (UserPrincipal + grup üyelikleri → `RoleMapping`) yapılır; eşleşen rol yoksa giriş reddedilir. Yerel Identity hesapları (bootstrap admin) lockout ile korunur.

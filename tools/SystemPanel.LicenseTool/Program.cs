@@ -10,6 +10,12 @@ using SystemPanel.Contracts.Licensing;
 //                    [--max-agents 100] [--features ad,laps,gpo] [--id <lisans-no>]
 //   splicense verify --public <public.pem> --license <dosya.lic>
 //
+// Runbook paketleri (ADR-002; lisans anahtarından AYRI bir anahtar çifti kullanılır):
+//   splicense runbook-keygen   --out <klasör>
+//   splicense runbook-sign     --key <runbook-signing.private.pem> --source <runbook klasörü> --out <paket.sprb>
+//   splicense runbook-sign-all --key <runbook-signing.private.pem> --source runbooks/src --out <klasör>
+//   splicense runbook-verify   --public <public.pem> --package <paket.sprb>
+//
 // ÖZEL ANAHTAR: repoya eklemeyin, paylaşmayın, şifreli ve yedekli bir ortamda (tercihen HSM / çevrimdışı
 // makine) saklayın. Kaybolursa yeni lisans üretilemez; sızarsa herkes lisans üretebilir.
 
@@ -28,6 +34,10 @@ static int Run(string[] args)
             "keygen" => KeyGen(options),
             "issue" => Issue(options),
             "verify" => Verify(options),
+            "runbook-keygen" => RunbookKeyGen(options),
+            "runbook-sign" => RunbookSign(options),
+            "runbook-sign-all" => RunbookSignAll(options),
+            "runbook-verify" => RunbookVerify(options),
             _ => Usage(),
         };
     }
@@ -99,6 +109,80 @@ static int Verify(Dictionary<string, string> o)
     return status.State == LicenseState.Valid ? 0 : 3;
 }
 
+static int RunbookKeyGen(Dictionary<string, string> o)
+{
+    var dir = Required(o, "out");
+    Directory.CreateDirectory(dir);
+    var privatePath = Path.Combine(dir, "runbook-signing.private.pem");
+    var publicPath = Path.Combine(dir, "runbook-vendor-public.pem");
+    if (File.Exists(privatePath))
+        throw new IOException($"{privatePath} zaten var; üzerine yazılmadı.");
+
+    using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+    File.WriteAllText(privatePath, key.ExportPkcs8PrivateKeyPem());
+    File.WriteAllText(publicPath, key.ExportSubjectPublicKeyInfoPem());
+
+    Console.WriteLine($"Özel anahtar : {privatePath}  (GİZLİ — repoya eklemeyin)");
+    Console.WriteLine($"Açık anahtar : {publicPath}  (parmak izi {SystemPanel.Contracts.Automation.RunbookPackageCodec.Fingerprint(key)})");
+    Console.WriteLine("Üretici kataloğu için: açık anahtarı src/SystemPanel/Automation/runbook-vendor-public.pem olarak ekleyin.");
+    Console.WriteLine("Kurum anahtarı için: açık anahtarı SystemPanel > Otomasyon > Katalog ve anahtarlar ekranından kaydedin.");
+    return 0;
+}
+
+static int RunbookSign(Dictionary<string, string> o)
+{
+    using var key = ECDsa.Create();
+    key.ImportFromPem(File.ReadAllText(Required(o, "key")));
+    var outPath = Required(o, "out");
+    var (id, version) = SignRunbookDirectory(Required(o, "source"), key, outPath);
+    Console.WriteLine($"İmzalandı: {id}@{version} -> {outPath}");
+    return 0;
+}
+
+static int RunbookSignAll(Dictionary<string, string> o)
+{
+    using var key = ECDsa.Create();
+    key.ImportFromPem(File.ReadAllText(Required(o, "key")));
+    var outDir = Required(o, "out");
+    Directory.CreateDirectory(outDir);
+
+    var count = 0;
+    foreach (var dir in Directory.GetDirectories(Required(o, "source")).OrderBy(d => d, StringComparer.Ordinal))
+    {
+        if (!File.Exists(Path.Combine(dir, "manifest.json")))
+            continue;
+        var name = Path.GetFileName(dir);
+        var (id, version) = SignRunbookDirectory(dir, key, Path.Combine(outDir, name + ".sprb"));
+        Console.WriteLine($"İmzalandı: {id}@{version}");
+        count++;
+    }
+    Console.WriteLine($"{count} runbook imzalandı -> {outDir}");
+    return count > 0 ? 0 : 1;
+}
+
+static (string Id, string Version) SignRunbookDirectory(string dir, ECDsa key, string outPath)
+{
+    var manifest = System.Text.Json.JsonSerializer.Deserialize<SystemPanel.Contracts.Automation.RunbookManifest>(
+        File.ReadAllText(Path.Combine(dir, "manifest.json")),
+        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+        ?? throw new ArgumentException($"{dir}: manifest okunamadı.");
+    var script = File.ReadAllText(Path.Combine(dir, "run.ps1"));
+    File.WriteAllText(outPath, SystemPanel.Contracts.Automation.RunbookPackageCodec.Sign(manifest, script, key));
+    return (manifest.Id, manifest.Version);
+}
+
+static int RunbookVerify(Dictionary<string, string> o)
+{
+    using var key = SystemPanel.Contracts.Automation.RunbookPackageCodec.ImportPublicKeyPem(File.ReadAllText(Required(o, "public")));
+    if (!SystemPanel.Contracts.Automation.RunbookPackageCodec.TryVerify(File.ReadAllText(Required(o, "package")), key, out var pkg, out var error))
+    {
+        Console.Error.WriteLine("GEÇERSİZ: " + error);
+        return 2;
+    }
+    Console.WriteLine($"Geçerli: {pkg!.Manifest.Id}@{pkg.Manifest.Version} | risk {pkg.Manifest.Risk} | betik sha256 {pkg.Manifest.ScriptSha256}");
+    return 0;
+}
+
 static DateTime? Date(Dictionary<string, string> o, string name)
     => o.TryGetValue(name, out var v)
         ? DateTime.SpecifyKind(DateTime.ParseExact(v, "yyyy-MM-dd", CultureInfo.InvariantCulture).AddDays(1).AddTicks(-1), DateTimeKind.Utc)
@@ -127,6 +211,10 @@ static int Usage()
         splicense issue  --key <private.pem> --customer "<Kurum>" --out <dosya.lic> [--edition Standard|Enterprise|Evaluation]
                          [--expires yyyy-MM-dd] [--support yyyy-MM-dd] [--max-agents N] [--features ad,laps,gpo,sccm,monitoring,dashboard,sms] [--id <no>]
         splicense verify --public <public.pem> --license <dosya.lic>
+        splicense runbook-keygen   --out <klasör>
+        splicense runbook-sign     --key <private.pem> --source <runbook klasörü> --out <paket.sprb>
+        splicense runbook-sign-all --key <private.pem> --source runbooks/src --out <klasör>
+        splicense runbook-verify   --public <public.pem> --package <paket.sprb>
         """);
     return 1;
 }

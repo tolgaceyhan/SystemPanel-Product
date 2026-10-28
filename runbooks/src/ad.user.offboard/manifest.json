@@ -1,0 +1,17 @@
+{
+  "id": "ad.user.offboard",
+  "version": "1.0.0",
+  "title": "Kullanıcı işten çıkış",
+  "description": "Hesabı devre dışı bırakır; isteğe bağlı olarak tüm gruplardan çıkarır ve arşiv OU'suna taşır. Ayrıcalıklı (adminCount=1) hesaplar işlenmez.",
+  "executor": "server",
+  "targetType": "ad-user",
+  "risk": "high",
+  "supportsDryRun": true,
+  "idempotent": true,
+  "timeoutSeconds": 300,
+  "parameters": [
+    { "name": "UserDn", "type": "ad-dn", "label": "Kullanıcı (DN)", "required": true, "inScope": true },
+    { "name": "ArchiveOu", "type": "ad-dn", "label": "Arşiv OU'su (DN)", "required": false, "inScope": true, "help": "Boş bırakılırsa hesap taşınmaz." },
+    { "name": "RemoveGroups", "type": "bool", "label": "Tüm gruplardan çıkar", "required": false, "default": "true" }
+  ]
+}

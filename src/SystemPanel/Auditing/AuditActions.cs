@@ -63,7 +63,6 @@ namespace SystemPanel.Auditing
         public const string AutomationRunbookImport = "automation.runbook.import";
         public const string AutomationRunbookDisable = "automation.runbook.disable";
         public const string AutomationRunRequested = "automation.run.requested";
-        public const string AutomationRunPreview = "automation.run.preview";
         public const string AutomationRunApproved = "automation.run.approved";
         public const string AutomationRunRejected = "automation.run.rejected";
         public const string AutomationRunCancelled = "automation.run.cancelled";

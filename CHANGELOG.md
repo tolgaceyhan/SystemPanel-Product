@@ -16,6 +16,16 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
 - **Agent:** Windows servisi; HTTPS zorunlu, DPAPI ile korunan anahtar, diske kalıcı tampon, geri çekilme + jitter, kurulum/kaldırma betikleri.
 - **NOC Dashboard:** WPF + WebView2; yeniden bağlanma, son geçerli yapılandırma önbelleği, ProgramData altında log.
 - **Platform:** HTTPS/HSTS, güvenli cookie, DPAPI korumalı yapılandırma değerleri, DataProtection anahtar koruması, güvenlik başlıkları, CSRF, ProblemDetails, health uçları.
+- **Otomasyon (runbook) motoru — ADR-002 Faz 1:**
+  - İmzalı runbook paketleri (ECDSA P-256) ve güvenilen anahtar deposu (üretici + kurum anahtarları, iptal)
+  - Parametre şeması ve kapsam doğrulaması
+  - Yüksek riskte zorunlu önizleme (dry-run)
+  - Dört göz onayı (talep eden onaylayamaz; onaylayanın kapsamı kontrol edilir), onay süresi
+  - Arka plan çalıştırıcısı, çıktı maskeleme, eksiksiz audit
+  - Ekranlar: katalog, talep, onay, sonuç, yönetim
+  - Üç yerleşik runbook (kullanıcı işten çıkış, pasif bilgisayar raporu, parola süresi raporu)
+  - `splicense runbook-*` komutları; sürüm paketinde runbook imzalama
+  - İzinler: `automation.view/run/approve/manage`. Admin rolü her zaman tüm izinlere sahiptir.
 - **Lisans:** çevrimdışı imzalı lisans dosyası (ECDSA P-256), lisans ekranı, agent sınırı; lisans sorunu mevcut işlemleri durdurmaz.
 - **Marka:** ürün adı ve logolar yapılandırılabilir (`Branding`).
 - **Organizasyon yapısı:** birim etiketi yapılandırılabilir (`Organization:UnitLabel`; il, bölge, şube...). Türkiye il haritası opsiyonel modül (`Organization:Map:Enabled`, varsayılan kapalı).

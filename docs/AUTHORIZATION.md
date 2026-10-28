@@ -44,6 +44,7 @@ Girişte `LoginService` kullanıcının AD grup üyeliklerini (`UserPrincipal.Ge
 | `announcements.view` / `announcements.manage` | Duyurular |
 | `monitoring.view` / `monitoring.manage` | Metrik/alarm görüntüleme; agent kaydı ve anahtar yönetimi |
 | `sms.send` / `sms.bulk` | Tekil SMS; toplu SMS |
+| `automation.view` / `.run` / `.approve` / `.manage` | Otomasyon: katalog; çalıştırma talebi; başkasının talebini onaylama (dört göz); katalog ve imzalama anahtarı yönetimi. Bkz. [AUTOMATION.md](AUTOMATION.md) |
 | `audit.view` | Denetim kayıtları |
 | `logs.view` / `logs.manage` | Uygulama logları; temizleme |
 | `settings.view` / `settings.manage` | Sağlık durumu (`/health/ready`), ayarlar; rol-izin matrisi |
@@ -58,7 +59,7 @@ Kaynak: `src/SystemPanel/Security/Permissions.cs`. Yeni izin eklemek için oraya
 
 | Rol | İzinler |
 |---|---|
-| Admin | Tümü (`scope.all` dahil) |
+| Admin | Tümü (`scope.all` dahil). Admin her zaman tüm izinlere sahiptir: yeni sürümlerde eklenen izinler açılışta eklenir, matristen kısıtlanamaz |
 | LocalAdmin | dashboard.view, servers.view/manage, ad.users.view/edit/disable/password.reset/unlock/move, ad.groups.manage, ad.computers.view, laps.read, sccm.view/manage, announcements.view, monitoring.view |
 | Operator | dashboard.view, ad.users.view/edit/disable/password.reset/unlock/move, ad.groups.manage |
 | Helpdesk | Operator + ad.users.create |

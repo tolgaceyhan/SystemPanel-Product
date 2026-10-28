@@ -26,7 +26,7 @@
 
 ## 1.x (P2)
 
-1. **Otomasyon motoru (runbook):** tasarım [ADR-002](ADR/002-automation-runbooks.md). İmzalı katalog, parametre şeması, önizleme (dry-run), dört göz onayı, zamanlama, olay tetikleyici, audit. Keyfi komut çalıştırma yok. Fazlar: MVP → agent → zamanlama/olay → kurum runbook'ları.
+1. **Otomasyon motoru (runbook):** ✅ Faz 1 (MVP) uygulandı ([AUTOMATION.md](AUTOMATION.md)). Sırada Faz 2 (agent), Faz 3 (zamanlama/olay). Tasarım [ADR-002](ADR/002-automation-runbooks.md). İmzalı katalog, parametre şeması, önizleme (dry-run), dört göz onayı, zamanlama, olay tetikleyici, audit. Keyfi komut çalıştırma yok. Fazlar: MVP → agent → zamanlama/olay → kurum runbook'ları.
 2. Kullanıcı yaşam döngüsü otomasyonu (işe giriş/çıkış), self-servis parola sıfırlama.
 3. GPO: şablondan oluşturma, ayar raporu, değişiklik onayı.
 4. SCCM: koleksiyon/dağıtım durumu (salt okunur), istemci sağlık raporu.

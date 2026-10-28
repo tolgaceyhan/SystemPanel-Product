@@ -44,7 +44,7 @@ jobs:
       shell: pwsh
       run: |
         $failed = $false
-        Get-ChildItem -Recurse -Filter *.ps1 -Path scripts, build, src/SystemPanel/scripts | ForEach-Object {
+        Get-ChildItem -Recurse -Filter *.ps1 -Path scripts, build, src/SystemPanel/scripts, runbooks | ForEach-Object {
           $tokens = $null; $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
           foreach ($e in $errors) { Write-Host "::error file=$($_.FullName),line=$($e.Extent.StartLineNumber)::$($e.Message)"; $failed = $true }
@@ -55,7 +55,7 @@ jobs:
       run: |
         Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
         $issues = @()
-        foreach ($dir in 'scripts', 'build') {
+        foreach ($dir in 'scripts', 'build', 'runbooks') {
           $issues += @(Invoke-ScriptAnalyzer -Path $dir -Recurse -Severity Error)
         }
         foreach ($i in $issues) { Write-Host "::error file=$($i.ScriptPath),line=$($i.Line)::$($i.RuleName): $($i.Message)" }

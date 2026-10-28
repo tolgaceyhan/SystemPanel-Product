@@ -1,0 +1,16 @@
+{
+  "id": "ad.user.password-expiry-report",
+  "version": "1.0.0",
+  "title": "Parola süresi dolacak kullanıcılar",
+  "description": "Belirtilen OU altında parolası verilen gün içinde dolacak etkin kullanıcıları listeler. Değişiklik yapmaz.",
+  "executor": "server",
+  "targetType": "ad-ou",
+  "risk": "low",
+  "supportsDryRun": false,
+  "idempotent": true,
+  "timeoutSeconds": 300,
+  "parameters": [
+    { "name": "SearchBase", "type": "ad-dn", "label": "Arama kökü (OU DN)", "required": true, "inScope": true },
+    { "name": "DaysAhead", "type": "int", "label": "Kaç gün içinde", "required": true, "min": 1, "max": 90, "default": "14" }
+  ]
+}

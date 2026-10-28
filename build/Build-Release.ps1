@@ -15,6 +15,10 @@
     -SigningCertThumbprint verilirse üretilen .exe/.dll dosyaları signtool ile imzalanır
     (sertifika derleme makinesinin sertifika deposunda olmalı; özel anahtar repoya girmez).
 
+    -RunbookSigningKeyPath verilirse runbooks/src altındaki yerleşik runbook'lar imzalanıp web\runbooks\
+    altına konur (açılışta kataloğa alınır). Ürünün bunlara güvenmesi için eşleşen açık anahtar
+    src/SystemPanel/Automation/runbook-vendor-public.pem olarak repoda bulunmalıdır.
+
 .EXAMPLE
     pwsh ./build/Build-Release.ps1 -Version 1.0.0-preview.1
 #>
@@ -24,7 +28,8 @@ param(
     [string]$OutputRoot = (Join-Path $PSScriptRoot '..' 'artifacts'),
     [switch]$SkipTests,
     [string]$SigningCertThumbprint,
-    [string]$TimestampUrl
+    [string]$TimestampUrl,
+    [string]$RunbookSigningKeyPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,6 +63,17 @@ try {
     Invoke-Dotnet publish src/SystemPanel/SystemPanel.csproj @common -o (Join-Path $stage 'web')
     Invoke-Dotnet publish src/AgentSystemPanel/AgentSystemPanel.csproj @common -o (Join-Path $stage 'agent')
     Invoke-Dotnet publish src/SystemPanel.Dashboard/SystemPanel.Dashboard.csproj @common -o (Join-Path $stage 'dashboard')
+
+    # Yerleşik runbook kataloğu (ADR-002)
+    if ($RunbookSigningKeyPath) {
+        if (-not (Test-Path src/SystemPanel/Automation/runbook-vendor-public.pem)) {
+            throw 'runbook-vendor-public.pem repoda yok: imzalanan runbook''lara ürün güvenmez.'
+        }
+        Invoke-Dotnet run --project tools/SystemPanel.LicenseTool -c Release -- runbook-sign-all --key $RunbookSigningKeyPath --source runbooks/src --out (Join-Path $stage 'web' 'runbooks')
+    }
+    else {
+        Write-Warning 'Yerleşik runbook''lar pakete eklenmedi (-RunbookSigningKeyPath verilmedi).'
+    }
 
     # Geliştirme yapılandırmaları pakete girmez.
     Get-ChildItem (Join-Path $stage 'web') -Filter 'appsettings.*.json' |

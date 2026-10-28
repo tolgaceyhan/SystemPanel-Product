@@ -1,0 +1,16 @@
+{
+  "id": "ad.computer.stale-report",
+  "version": "1.0.0",
+  "title": "Pasif bilgisayar raporu",
+  "description": "Belirtilen OU altında, verilen gün sayısından uzun süredir oturum açmamış bilgisayar hesaplarını listeler. Değişiklik yapmaz.",
+  "executor": "server",
+  "targetType": "ad-ou",
+  "risk": "low",
+  "supportsDryRun": false,
+  "idempotent": true,
+  "timeoutSeconds": 300,
+  "parameters": [
+    { "name": "SearchBase", "type": "ad-dn", "label": "Arama kökü (OU DN)", "required": true, "inScope": true },
+    { "name": "Days", "type": "int", "label": "Pasif gün sayısı", "required": true, "min": 30, "max": 730, "default": "90" }
+  ]
+}

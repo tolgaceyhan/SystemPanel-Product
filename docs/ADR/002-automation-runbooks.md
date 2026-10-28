@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Durum | Önerildi (tasarım; uygulama ROADMAP 1.x) |
+| Durum | Kabul edildi. Faz 1 (MVP) uygulandı; kılavuz: [AUTOMATION.md](../AUTOMATION.md) |
 | Tarih | 2026-10-28 |
 | Kapsam | SystemPanel web, Agent, Contracts |
 

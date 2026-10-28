@@ -143,6 +143,15 @@ builder.Services.AddRateLimiter(o =>
             }));
 });
 
+// TempData (durum mesajları) cookie'si de diğer cookie'lerle aynı güvenlik bayraklarını taşır.
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.CookieTempDataProviderOptions>(options =>
+{
+    options.Cookie.Name = "SystemPanel.TempData";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = cookieSecure;
+});
+
 builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = "SystemPanel.Antiforgery";

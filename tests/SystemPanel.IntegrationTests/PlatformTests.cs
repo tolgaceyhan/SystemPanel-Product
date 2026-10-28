@@ -80,6 +80,28 @@ public sealed class PlatformTests : IClassFixture<SystemPanelFactory>
     }
 
     [Fact]
+    public async Task LoginPage_AllCookiesAreHttpOnly_AndSecureOverHttps()
+    {
+        // Saha duman testinde (Test-SystemPanelDeployment.ps1) bulunan: TempData cookie'si Secure taşımıyordu.
+        var client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost"),
+        });
+
+        var response = await client.GetAsync("/Account/Login");
+
+        var cookies = response.Headers.GetValues("Set-Cookie").ToList();
+        Assert.Contains(cookies, c => c.StartsWith("SystemPanel.TempData=", StringComparison.Ordinal));
+        Assert.DoesNotContain(cookies, c => c.StartsWith(".AspNetCore.", StringComparison.Ordinal));
+        Assert.All(cookies, c =>
+        {
+            Assert.Contains("httponly", c, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("secure", c, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    [Fact]
     public async Task CorrelationId_IsEchoedWhenValid()
     {
         var client = _factory.CreateAnonymousClient();

@@ -72,6 +72,8 @@ Geçersiz yapılandırmada servis açılmaz ve nedeni Windows Event Log'a (`Syst
 |---|---|---|
 | `POST /api/v1/agents/heartbeat` | `X-Agent-Id` + `X-Agent-Key` | 200 + `RecommendedIntervalSeconds` |
 | `POST /api/v1/agents/metrics` | aynı | 202. Doğrulama hatası 400 (yüzde 0–100, en fazla 64 disk). 5 dk'dan ileri veya 1 günden eski zaman damgası sunucu saatiyle değiştirilir |
+| `POST /api/v1/agents/commands/next` | aynı | 200 + iş veya 204 (iş yok) |
+| `POST /api/v1/agents/commands/{id}/result` | aynı | 204. İş bu agent'ın değilse 404, beklenmeyen aşamadaysa 409 |
 | `POST /api/agentmetrics/ingest` (eski, anonim) | yok | **410 Gone**. `Monitoring:AllowLegacyAnonymousIngest=true` ile geçici olarak açılabilir |
 
 - Agent yalnızca kayıtlı olduğu hostname adına bildirim yapabilir (aksi 403).
@@ -79,7 +81,22 @@ Geçersiz yapılandırmada servis açılmaz ve nedeni Windows Event Log'a (`Syst
 - Başarısız kimlik doğrulama denemeleri kısıtlanarak audit'lenir.
 - İl bilgisi agent'tan değil, kayıttan (`Agents.Province`) gelir.
 
-## 5. Eski agent'tan geçiş
+## 5. Otomasyon (runbook) işleri
+
+Agent, SystemPanel'den onaylanmış runbook işlerini çekip çalıştırabilir. Bu özellik **varsayılan olarak kapalıdır** ve yalnızca yerel izin listesindeki, güvenilen anahtarla imzalı runbook'ları çalıştırır.
+
+| Anahtar | Varsayılan | Açıklama |
+|---|---|---|
+| `Agent:Automation:Enabled` | false | Runbook işlerini al |
+| `Agent:Automation:AllowedRunbooks` | [] | Bu sunucuda çalışabilecek runbook kimlikleri |
+| `Agent:Automation:TrustedKeyFiles` | [] | Ek güvenilen imzalama açık anahtarları (PEM). Üretici anahtarı gömülüdür |
+| `Agent:Automation:PollSeconds` | 15 | İş kontrol aralığı |
+| `Agent:Automation:PowerShellPath` | powershell.exe | |
+| `Agent:Automation:MaxOutputBytes` | 262144 | Sunucuya gönderilen çıktı sınırı |
+
+Ayrıntılar ve yetki önerileri: [AUTOMATION.md](AUTOMATION.md#agent-üzerinde-çalışan-runbooklar-faz-2).
+
+## 6. Eski agent'tan geçiş
 
 Kimlik doğrulamasız eski agent protokolünü (`api/agentmetrics/ingest`) kullanan kurulumlar için:
 

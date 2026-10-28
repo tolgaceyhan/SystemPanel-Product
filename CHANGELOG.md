@@ -26,6 +26,14 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
   - Üç yerleşik runbook (kullanıcı işten çıkış, pasif bilgisayar raporu, parola süresi raporu)
   - `splicense runbook-*` komutları; sürüm paketinde runbook imzalama
   - İzinler: `automation.view/run/approve/manage`. Admin rolü her zaman tüm izinlere sahiptir.
+- **Otomasyon — ADR-002 Faz 2 (agent üzerinde çalıştırma):**
+  - Runbook'lar seçilen sunucudaki agent'ta çalışır. Bağlantıyı agent başlatır, ek port açılmaz.
+  - Önizleme agent'ta yapılır. Hedef agent kullanıcının biriminde olmalı (talep eden ve onaylayan için).
+  - Agent tarafı kontroller: otomasyon varsayılan kapalı, yerel izin listesi, agent'ın kendi güvendiği anahtarla imza doğrulaması, parametrelerin yeniden doğrulanması.
+  - Zamanında alınmayan veya sonucu bildirilmeyen işler kapanır ve yeniden çalıştırılmaz.
+  - Üç agent runbook'u: servis yeniden başlatma, Windows Temp temizliği, tanılama özeti.
+  - Agent kurulum betiğine `-AllowedRunbooks` ve `-TrustedRunbookKeyFiles` parametreleri eklendi.
+  - Ortak runbook çalışma zamanı `SystemPanel.Contracts` projesine taşındı.
 - **Lisans:** çevrimdışı imzalı lisans dosyası (ECDSA P-256), lisans ekranı, agent sınırı; lisans sorunu mevcut işlemleri durdurmaz.
 - **Marka:** ürün adı ve logolar yapılandırılabilir (`Branding`).
 - **Organizasyon yapısı:** birim etiketi yapılandırılabilir (`Organization:UnitLabel`; il, bölge, şube...). Türkiye il haritası opsiyonel modül (`Organization:Map:Enabled`, varsayılan kapalı).

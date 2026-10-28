@@ -1,0 +1,15 @@
+{
+  "id": "server.disk.temp-cleanup",
+  "version": "1.0.0",
+  "title": "Windows Temp klasörünü temizle",
+  "description": "Yalnızca %SystemRoot%\\Temp altındaki, belirtilen günden eski dosyaları siler. Bağlantı noktalarını (junction/symlink) izlemez, kullanımdaki dosyaları atlar. Önizleme silinecek dosya sayısını ve boyutunu gösterir.",
+  "executor": "agent",
+  "targetType": "server",
+  "risk": "high",
+  "supportsDryRun": true,
+  "idempotent": true,
+  "timeoutSeconds": 900,
+  "parameters": [
+    { "name": "OlderThanDays", "type": "int", "label": "Şu kadar günden eski dosyalar", "required": true, "min": 7, "max": 365, "default": "30" }
+  ]
+}

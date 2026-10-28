@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Durum | Kabul edildi. Faz 1 (MVP) uygulandı; kılavuz: [AUTOMATION.md](../AUTOMATION.md) |
+| Durum | Kabul edildi. Faz 1 (MVP) ve Faz 2 (agent) uygulandı; kılavuz: [AUTOMATION.md](../AUTOMATION.md) |
 | Tarih | 2026-10-28 |
 | Kapsam | SystemPanel web, Agent, Contracts |
 

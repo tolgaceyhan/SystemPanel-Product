@@ -1,0 +1,15 @@
+{
+  "id": "server.diagnostics.snapshot",
+  "version": "1.0.0",
+  "title": "Sunucu tanılama özeti",
+  "description": "Hedef sunucunun çalışma süresi, disk durumu, en çok kaynak kullanan süreçler, bekleyen yeniden başlatma ve son 24 saatteki kritik sistem olayları. Değişiklik yapmaz.",
+  "executor": "agent",
+  "targetType": "server",
+  "risk": "low",
+  "supportsDryRun": false,
+  "idempotent": true,
+  "timeoutSeconds": 120,
+  "parameters": [
+    { "name": "TopProcesses", "type": "int", "label": "Listelenecek süreç sayısı", "required": true, "min": 1, "max": 50, "default": "10" }
+  ]
+}

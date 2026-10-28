@@ -52,6 +52,9 @@ Talep ──► (önizleme) ──► Onay bekliyor ──► Kuyrukta ──►
 | `ad.user.offboard` | Yüksek | Hesabı devre dışı bırakır. İsteğe bağlı: tüm gruplardan çıkarır, arşiv OU'suna taşır. Ayrıcalıklı (`adminCount=1`) hesapları işlemez |
 | `ad.computer.stale-report` | Düşük | Verilen gün sayısından uzun süredir oturum açmamış bilgisayarları listeler (salt okunur) |
 | `ad.user.password-expiry-report` | Düşük | Parolası yakında dolacak etkin kullanıcıları listeler (salt okunur) |
+| `server.service.restart` (agent) | Orta | Hedef sunucuda bir servisi yeniden başlatır. Kritik sistem servislerini ve agent'ın kendisini reddeder. Önizleme durumu ve bağımlı servisleri gösterir |
+| `server.disk.temp-cleanup` (agent) | Yüksek | Yalnızca `%SystemRoot%\Temp` altında N günden eski dosyaları siler. Junction/symlink izlemez. Önizleme dosya sayısını ve boyutunu gösterir |
+| `server.diagnostics.snapshot` (agent) | Düşük | Çalışma süresi, diskler, en çok bellek kullanan süreçler, bekleyen yeniden başlatma, son 24 saatin kritik olayları (salt okunur) |
 
 Kaynakları `runbooks/src/` altındadır. Sürüm paketi üretilirken üretici anahtarıyla imzalanır ve açılışta kataloğa alınır.
 
@@ -95,9 +98,69 @@ Kuyruğu kapatmak için: `BackgroundJobs:Automation:Enabled=false`. Talepler olu
    **Katalog ve anahtarlar → Runbook paketi içe aktar.**
 5. Bir anahtar sızarsa **İptal et** deyin. O anahtarla imzalı tüm runbook'lar hemen çalıştırılamaz hale gelir (kuyruktakiler dahil).
 
-## Sınırlar (MVP) ve sonraki adımlar
+## Agent üzerinde çalışan runbook'lar (Faz 2)
 
-- Yalnızca sunucu tarafında çalışan runbook'lar var. Agent üzerinden sunucu yerelinde çalıştırma ADR-002 Faz 2'de gelecek.
+Manifestte `"executor": "agent"` ve `"targetType": "server"` olan runbook'lar web sunucusunda değil, seçilen sunucudaki **SystemPanel Agent** tarafından çalıştırılır.
+
+```
+Talep (hedef sunucu seçilir) ──► Önizleme bekliyor ──► agent önizlemeyi alır ve çalıştırır (-DryRun)
+   ──► Onay bekliyor ──► onay (dört göz) ──► Kuyrukta ──► agent işi alır ──► Agent'ta çalışıyor ──► sonuç
+```
+
+- **Bağlantı yönü:** Sunucu agent'a bağlanmaz. Agent kendi işini düzenli aralıklarla sunucudan çeker (`POST /api/v1/agents/commands/next`). Güvenlik duvarında ek port açılmaz.
+- **Hedef kapsamı:**
+  - Kapsamı global olan kullanıcılar tüm agent'ları hedefleyebilir.
+  - Diğerleri yalnızca birimi (agent kaydındaki "İl/Birim") kendi birimleriyle eşleşen agent'ları hedefleyebilir.
+  - Birimi atanmamış agent'ı yalnızca global kapsamlı kullanıcılar hedefleyebilir.
+  - Onaylayan kişi için de aynı kural geçerlidir.
+- **Agent'ın kendi kontrolleri:** Agent sunucuya körü körüne güvenmez. Bir iş ancak şu koşulların hepsi sağlanırsa çalışır:
+  - Otomasyon agent'ta açıkça etkinleştirilmiş olmalı (varsayılan **kapalı**).
+  - Runbook kimliği agent'ın **yerel izin listesinde** olmalı.
+  - Paket, agent'ın **kendi güvendiği** bir anahtarla imzalanmış olmalı (gömülü üretici anahtarı veya `TrustedKeyFiles`).
+  - Parametreler şemaya uymalı; bilinmeyen parametre bulunmamalı.
+  
+  Bu yüzden web sunucusu ele geçirilse bile agent'a izin listesi dışında bir iş yaptırılamaz. Reddedilen iş hiç çalışmaz ve sonuç ekranında "Agent işi reddetti" olarak görünür.
+- **Zaman aşımı:**
+  - Agent işi zamanında almazsa (sunucu kapalı, otomasyon kapalı) iş **Süresi doldu** olur.
+  - Agent işi alıp sonucu son tarihe kadar (betik süresi + 5 dk) bildirmezse iş **Zaman aşımı** olur.
+  - Bu durumdaki işler yeniden çalıştırılmaz; hedef sunucuyu kontrol edin.
+
+### Agent'ta otomasyonu açmak
+
+Kurulum betiğiyle (yönetici PowerShell):
+
+```powershell
+.\Install-SystemPanelAgent.ps1 -ServerUrl https://<sunucu> -AgentId <guid> `
+    -AllowedRunbooks server.diagnostics.snapshot, server.service.restart `
+    -TrustedRunbookKeyFiles .\kurum-runbook-public.pem    # yalnızca kurum anahtarı kullanılıyorsa
+```
+
+Ya da `%ProgramData%\SystemPanel\Agent\agentsettings.json` içinde:
+
+```json
+"Automation": {
+  "Enabled": true,
+  "AllowedRunbooks": [ "server.diagnostics.snapshot", "server.service.restart" ],
+  "TrustedKeyFiles": [ "kurum-runbook-public.pem" ]
+}
+```
+
+Değişiklikten sonra servisi yeniden başlatın: `Restart-Service SystemPanelAgent`.
+
+### Agent hesabının yetkileri
+
+Agent düşük yetkili `NT SERVICE\SystemPanelAgent` hesabıyla çalışır ve **yetki yükseltmez**. Runbook'lar bu hesabın yapabildiği kadarını yapabilir. Yetkiyi yalnızca gereken kaynağa verin:
+
+| Runbook | Gereken yetki | Örnek |
+|---|---|---|
+| `server.diagnostics.snapshot` | Ek yetki gerekmez (olay günlüğü için `Event Log Readers`) | `Add-LocalGroupMember -Group 'Event Log Readers' -Member 'NT SERVICE\SystemPanelAgent'` |
+| `server.service.restart` | Yalnızca ilgili servis için başlatma/durdurma | `sc.exe sdshow <Servis>` çıktısına `(A;;RPWPDTLO;;;<agent SID>)` ekleyip `sc.exe sdset <Servis> <yeni SDDL>`. SID için: `sc.exe showsid SystemPanelAgent` |
+| `server.disk.temp-cleanup` | `%SystemRoot%\Temp` üzerinde silme yetkisi | Klasör ACL'sine agent hesabı için `Modify`. Başka hesapların dosyaları için yönetici yetkisi gerekebilir; o dosyalar atlanır ve sonuçta "skipped" olarak sayılır |
+
+Agent'ı `LocalSystem` olarak çalıştırmak tüm runbook'lara tam yetki verir. **Önerilmez.**
+
+## Sınırlar ve sonraki adımlar
+
 - Zamanlama ve olay tetikleyicileri yok (Faz 3).
-- Aynı anda tek iş çalışıyor.
+- Sunucu tarafında ve her agent'ta aynı anda tek iş çalışıyor.
 - Yeniden deneme yok. Başarısız işi yeni talep olarak başlatın.

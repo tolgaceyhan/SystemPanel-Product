@@ -1,0 +1,15 @@
+{
+  "id": "server.service.restart",
+  "version": "1.0.0",
+  "title": "Servisi yeniden başlat",
+  "description": "Hedef sunucuda bir Windows servisini yeniden başlatır. Kritik sistem servisleri ve SystemPanel Agent'ın kendisi reddedilir. Önizleme servis durumunu ve bağımlı servisleri gösterir.",
+  "executor": "agent",
+  "targetType": "server",
+  "risk": "medium",
+  "supportsDryRun": true,
+  "idempotent": true,
+  "timeoutSeconds": 180,
+  "parameters": [
+    { "name": "ServiceName", "type": "string", "label": "Servis adı (kısa ad)", "required": true, "maxLength": 80, "pattern": "[A-Za-z0-9_.$-]{1,80}", "help": "Ör. Spooler, W3SVC, MSSQL$INSTANCE" }
+  ]
+}

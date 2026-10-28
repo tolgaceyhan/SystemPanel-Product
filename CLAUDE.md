@@ -24,6 +24,8 @@ DOTNET_ROLL_FORWARD=Major dotnet ef migrations add <Ad> --project src/SystemPane
 - `src/SystemPanel/Licensing/`: `ILicenseService`; `tools/SystemPanel.LicenseTool`: üretici aracı (lisans + runbook imzalama)
 - `src/SystemPanel/Automation/`: otomasyon motoru (ADR-002): `RunbookCatalog`, `RunbookTrustStore`, `RunbookParameterBinder`, `RunbookRunService` (TÜM durum geçişleri burada), `PowerShellRunbookScriptHost`
 - `runbooks/src/<id>/`: yerleşik runbook kaynakları (`manifest.json` + `run.ps1`); sürüm paketinde imzalanır
+- `src/SystemPanel.Contracts/Automation/`: sunucu ve agent'ın ortak runbook çalışma zamanı (paket/imza, parametre kuralları, PowerShell çalıştırıcı)
+- `src/AgentSystemPanel/Automation/`: agent tarafı (`AgentCommandProcessor`: imza + yerel izin listesi + parametre doğrulaması; `AgentCommandWorker`)
 
 ## Kurallar (zorunlu)
 

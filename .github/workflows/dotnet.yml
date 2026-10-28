@@ -54,9 +54,12 @@ jobs:
       shell: pwsh
       run: |
         Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
-        $issues = Invoke-ScriptAnalyzer -Path scripts, build -Recurse -Severity Error
-        $issues | Format-Table -AutoSize
-        if ($issues) { exit 1 }
+        $issues = @()
+        foreach ($dir in 'scripts', 'build') {
+          $issues += @(Invoke-ScriptAnalyzer -Path $dir -Recurse -Severity Error)
+        }
+        foreach ($i in $issues) { Write-Host "::error file=$($i.ScriptPath),line=$($i.Line)::$($i.RuleName): $($i.Message)" }
+        if ($issues.Count -gt 0) { exit 1 }
     - name: Build release package
       shell: pwsh
       run: ./build/Build-Release.ps1 -Version 0.0.0-ci.${{ github.run_number }} -SkipTests

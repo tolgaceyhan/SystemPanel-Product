@@ -310,10 +310,12 @@ namespace SystemPanel.Controllers
         [HttpPost("manage/keys/{id:guid}/revoke")]
         [ValidateAntiForgeryToken]
         [RequirePermission(Permissions.AutomationManage)]
-        public async Task<IActionResult> RevokeKey(Guid id, CancellationToken ct)
+        public async Task<IActionResult> RevokeKey(Guid id, [FromServices] RunbookKeyRevocationService revocation, CancellationToken ct)
         {
-            var ok = await _trust.RevokeAsync(id, User.Identity?.Name, ct);
-            TempData[ok ? "Success" : "Error"] = ok ? "Anahtar iptal edildi; bu anahtarla imzalı runbook'lar artık çalıştırılamaz." : "Anahtar bulunamadı.";
+            var result = await revocation.RevokeAsync(id, User.Identity?.Name, ct);
+            TempData[result.Success ? "Success" : "Error"] = result.Success
+                ? $"Anahtar iptal edildi; bu anahtarla imzalı runbook'lar artık çalıştırılamaz. İptal edilen talep: {result.CancelledRuns}, kapatılan zamanlama: {result.DisabledSchedules}."
+                : result.Error;
             return RedirectToAction(nameof(Manage));
         }
     }

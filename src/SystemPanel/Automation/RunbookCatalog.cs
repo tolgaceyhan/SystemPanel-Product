@@ -73,6 +73,10 @@ namespace SystemPanel.Automation
                     : new RunbookImportResult(false, $"{m.Id}@{m.Version} farklı içerikle zaten kayıtlı. Sürüm numarasını artırın.", null);
             }
 
+            var ownershipError = await CheckOwnershipAsync(m.Id, key, ct);
+            if (ownershipError != null)
+                return new RunbookImportResult(false, ownershipError, null);
+
             var version = new RunbookVersion
             {
                 Id = Guid.NewGuid(),
@@ -95,6 +99,30 @@ namespace SystemPanel.Automation
             await _db.SaveChangesAsync(ct);
 
             return new RunbookImportResult(true, null, version);
+        }
+
+        /// <summary>
+        /// Runbook kimliğinin sahipliği (Faz 4): <c>org.</c> ön eki kurum anahtarlarına ayrılmıştır; bir kimlik ilk kez hangi
+        /// kaynağın (üretici/kurum) anahtarıyla içe aktarıldıysa sonraki sürümleri de aynı kaynaktan gelmelidir. Böylece kurum
+        /// anahtarı yerleşik bir runbook'un "yeni sürümünü" yayımlayıp onun yerine geçemez; ürün güncellemesi de kurumun
+        /// runbook'unu ezemez. Kurum içinde anahtar değişimi (rotasyon) serbesttir.
+        /// </summary>
+        private async Task<string?> CheckOwnershipAsync(string runbookId, TrustedRunbookKey key, CancellationToken ct)
+        {
+            var isOrganizationKey = !key.IsBuiltIn;
+            if (!isOrganizationKey && RunbookNamespaces.IsOrganizationId(runbookId))
+                return $"'{RunbookNamespaces.OrganizationPrefix}' ön eki kurum runbook'larına ayrılmıştır; üretici paketi bu kimliği kullanamaz.";
+
+            var organizationKeys = await _db.RunbookSigningKeys.AsNoTracking().Select(k => k.Fingerprint).ToListAsync(ct);
+            var signers = await _db.RunbookVersions.AsNoTracking().Where(v => v.RunbookId == runbookId).Select(v => v.KeyFingerprint).Distinct().ToListAsync(ct);
+            if (signers.Any(fp => organizationKeys.Contains(fp, StringComparer.OrdinalIgnoreCase) != isOrganizationKey))
+            {
+                return isOrganizationKey
+                    ? $"{runbookId} üretici kataloğuna ait; kurum anahtarıyla yeni sürümü yayımlanamaz. Kurum runbook'ları '{RunbookNamespaces.OrganizationPrefix}' ön ekini kullanır."
+                    : $"{runbookId} kurum anahtarıyla yayımlanmış; üretici paketi bu kimliği kullanamaz.";
+            }
+
+            return null;
         }
 
         /// <summary>Klasördeki *.sprb paketlerini içe aktarır (açılışta; yerleşik katalog).</summary>

@@ -78,6 +78,10 @@ namespace SystemPanel.Automation
             if (name.Length is < 1 or > 100)
                 return (false, "Ad 1-100 karakter olmalı.");
 
+            // Özel anahtar yapıştırıldıysa kabul edilmez (ImportFromPem açık anahtarı türetebilirdi): anahtar artık ifşa olmuştur.
+            if ((publicKeyPem ?? string.Empty).Contains("PRIVATE KEY", StringComparison.OrdinalIgnoreCase))
+                return (false, "Bu bir ÖZEL anahtar. Kaydedilmedi. Özel anahtar paylaşıldığı için ifşa olmuş sayılmalıdır: yeni bir anahtar çifti üretin ve yalnızca açık anahtarı (runbook-org-public.pem) kaydedin.");
+
             string fingerprint;
             string normalizedPem;
             try

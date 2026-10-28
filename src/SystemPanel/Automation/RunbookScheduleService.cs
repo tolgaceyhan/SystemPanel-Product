@@ -289,6 +289,38 @@ namespace SystemPanel.Automation
             return new ScheduleOperationResult(true, null, schedule);
         }
 
+        /// <summary>İmza anahtarı iptal edildiğinde (Faz 4) o anahtarla imzalı sürümlere bağlı etkin/bekleyen zamanlamalar kapatılır.</summary>
+        public async Task<int> DisableSignedByAsync(string fingerprint, string actor, CancellationToken ct = default)
+        {
+            var schedules = await _db.RunbookSchedules
+                .Where(s => s.RunbookVersion!.KeyFingerprint == fingerprint &&
+                            (s.Status == RunbookScheduleStatus.Active || s.Status == RunbookScheduleStatus.PendingApproval))
+                .ToListAsync(ct);
+
+            foreach (var schedule in schedules)
+            {
+                schedule.Status = RunbookScheduleStatus.Disabled;
+                schedule.DisabledBy = actor;
+                schedule.DisabledAtUtc = Now;
+                schedule.NextFireAtUtc = null;
+            }
+            await _db.SaveChangesAsync(ct);
+
+            foreach (var schedule in schedules)
+            {
+                await _audit.RecordAsync(new AuditRecord(AuditActions.AutomationScheduleDisable)
+                {
+                    ResourceType = "RunbookSchedule",
+                    ResourceId = schedule.Id.ToString(),
+                    ResourceName = schedule.Name,
+                    ActorUserName = actor,
+                    After = new { Reason = "key-revoked", KeyFingerprint = fingerprint },
+                }, ct);
+            }
+
+            return schedules.Count;
+        }
+
         // ------------------------------------------------------------------ Görünürlük
         public async Task<IReadOnlyList<RunbookSchedule>> ListVisibleAsync(ClaimsPrincipal user, CancellationToken ct = default)
         {

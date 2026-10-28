@@ -573,6 +573,46 @@ namespace SystemPanel.Automation
                     .SetProperty(r => r.FinishedAtUtc, Now)
                     .SetProperty(r => r.Error, "Uygulama yeniden başladığında çalışma yarıda kaldı; sonuç bilinmiyor. Hedefi kontrol edin."), ct);
 
+        /// <summary>
+        /// İmza anahtarı iptal edildiğinde (Faz 4): o anahtarla imzalı sürümlerin henüz çalışmaya başlamamış talepleri
+        /// iptal edilir. Çalışmakta olan veya agent'a teslim edilmiş işler durdurulamaz; sonuçları normal şekilde kaydedilir.
+        /// </summary>
+        public async Task<int> CancelSignedByAsync(string fingerprint, string actor, CancellationToken ct = default)
+        {
+            var now = Now;
+            var runs = await _db.RunbookRuns.AsNoTracking()
+                .Where(r => r.RunbookVersion!.KeyFingerprint == fingerprint &&
+                            (r.Status == RunbookRunStatus.PendingApproval || r.Status == RunbookRunStatus.Approved || r.Status == RunbookRunStatus.PreviewPending))
+                .Select(r => new { r.Id, r.Status, r.RunbookVersion!.RunbookId, r.RunbookVersion.Version })
+                .ToListAsync(ct);
+
+            var cancelled = 0;
+            foreach (var item in runs)
+            {
+                var id = item.Id;
+                var updated = await _db.RunbookRuns
+                    .Where(r => r.Id == id && r.Status == item.Status)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(r => r.Status, RunbookRunStatus.Cancelled)
+                        .SetProperty(r => r.FinishedAtUtc, now)
+                        .SetProperty(r => r.Error, "Runbook'u imzalayan anahtar iptal edildi."), ct);
+                if (updated == 0)
+                    continue;
+
+                cancelled++;
+                await _audit.RecordAsync(new AuditRecord(AuditActions.AutomationRunCancelled)
+                {
+                    ResourceType = "RunbookRun",
+                    ResourceId = id.ToString(),
+                    ResourceName = $"{item.RunbookId}@{item.Version}",
+                    ActorUserName = actor,
+                    After = new { Reason = "key-revoked", KeyFingerprint = fingerprint },
+                }, ct);
+            }
+
+            return cancelled;
+        }
+
         // ------------------------------------------------------------------ Agent çalıştırıcısı (Faz 2)
         private const int DispatchGraceSeconds = 300;
 

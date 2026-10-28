@@ -37,7 +37,23 @@
                     <td>@v.Title<br /><code class="small">@v.RunbookId</code></td>
                     <td>@v.Version</td>
                     <td><partial name="_Badges" model='("risk", v.Risk)' /></td>
-                    <td><code class="small" title="@v.KeyFingerprint">@v.KeyFingerprint[..16]…</code></td>
+                    @{ var signer = keys.FirstOrDefault(k => string.Equals(k.Fingerprint, v.KeyFingerprint, StringComparison.OrdinalIgnoreCase)); }
+                    <td>
+                        @if (signer == null)
+                        {
+                            <span class="badge text-bg-danger">Bilinmeyen anahtar</span>
+                        }
+                        else
+                        {
+                            <span class="badge @(signer.IsBuiltIn ? "text-bg-primary" : "text-bg-info")">@(signer.IsBuiltIn ? "Üretici" : "Kurum")</span>
+                            <span class="small">@signer.Name</span>
+                            @if (signer.IsRevoked)
+                            {
+                                <span class="badge text-bg-danger">İptal edildi</span>
+                            }
+                        }
+                        <br /><code class="small" title="@v.KeyFingerprint">@v.KeyFingerprint[..16]…</code>
+                    </td>
                     <td class="small">@v.ImportedAtUtc.ToString("yyyy-MM-dd") · @v.ImportedBy</td>
                     <td>@(v.IsEnabled ? "Etkin" : "Devre dışı")</td>
                     <td>
@@ -67,7 +83,7 @@
                     <td>
                         @if (!k.IsBuiltIn && !k.IsRevoked && k.Id != null)
                         {
-                            <form asp-action="RevokeKey" asp-route-id="@k.Id" method="post" onsubmit="return confirm('Anahtar iptal edilsin mi? Bu anahtarla imzalı runbook\'lar artık çalıştırılamaz.');">
+                            <form asp-action="RevokeKey" asp-route-id="@k.Id" method="post" onsubmit="return confirm('Anahtar iptal edilsin mi? Bu anahtarla imzalı runbook\'lar artık çalıştırılamaz; bekleyen talepleri iptal edilir ve zamanlamaları kapatılır.');">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm btn-outline-danger">İptal et</button>
                             </form>
@@ -86,7 +102,7 @@
 <div class="card">
     <div class="card-body">
         <h5 class="card-title">Kurum imzalama anahtarı ekle</h5>
-        <p class="small text-muted">Kurumunuzun kendi runbook'larını imzaladığı ECDSA P-256 <strong>açık</strong> anahtarı (PEM). Özel anahtarı buraya yapıştırmayın.</p>
+        <p class="small text-muted">Kurumunuzun kendi runbook'larını imzaladığı ECDSA P-256 <strong>açık</strong> anahtarı (PEM; <code>sprunbook keygen</code> çıktısındaki <code>runbook-org-public.pem</code>). Özel anahtarı buraya yapıştırmayın. Kurum runbook kimlikleri <code>org.</code> ile başlar.</p>
         <form asp-action="AddKey" method="post" style="max-width: 760px">
             @Html.AntiForgeryToken()
             <input name="name" class="form-control mb-2" maxlength="100" placeholder="Ad (ör. BT Otomasyon 2026)" required />

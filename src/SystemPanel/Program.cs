@@ -195,6 +195,7 @@ builder.Services.AddScoped<SystemPanel.Automation.RunbookTrustStore>();
 builder.Services.AddScoped<SystemPanel.Automation.RunbookCatalog>();
 builder.Services.AddScoped<SystemPanel.Automation.RunbookRunService>();
 builder.Services.AddScoped<SystemPanel.Automation.RunbookScheduleService>();
+builder.Services.AddScoped<SystemPanel.Automation.RunbookKeyRevocationService>();
 builder.Services.AddSingleton<SystemPanel.Automation.AutomationAlarmQueue>();
 builder.Services.AddSingleton<SystemPanel.Automation.IRunbookScriptHost, SystemPanel.Automation.PowerShellRunbookScriptHost>();
 builder.Services.AddHostedService<SystemPanel.Automation.RunbookCatalogInitializer>();

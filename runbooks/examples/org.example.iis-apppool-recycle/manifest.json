@@ -1,0 +1,15 @@
+{
+  "id": "org.example.iis-apppool-recycle",
+  "version": "1.0.0",
+  "title": "IIS uygulama havuzunu geri dönüştür (örnek)",
+  "description": "Hedef sunucuda bir IIS uygulama havuzunu geri dönüştürür (recycle). Havuz durdurulmuşsa başlatılmaz. Önizleme havuzun durumunu ve çalışan işlem sayısını gösterir.",
+  "executor": "agent",
+  "targetType": "server",
+  "risk": "medium",
+  "supportsDryRun": true,
+  "idempotent": true,
+  "timeoutSeconds": 120,
+  "parameters": [
+    { "name": "AppPoolName", "type": "string", "label": "Uygulama havuzu", "required": true, "maxLength": 64, "pattern": "[A-Za-z0-9 ._-]{1,64}", "help": "IIS Yöneticisi'nde görünen ad" }
+  ]
+}

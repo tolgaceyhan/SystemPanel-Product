@@ -1,0 +1,16 @@
+{
+  "id": "org.example.ad-group-report",
+  "version": "1.0.0",
+  "title": "OU grup raporu (örnek)",
+  "description": "Seçilen OU altındaki grupları kapsam, tür ve doğrudan üye sayısıyla listeler. Boş grupları ayrıca işaretler. Değişiklik yapmaz.",
+  "executor": "server",
+  "targetType": "ad-ou",
+  "risk": "low",
+  "supportsDryRun": false,
+  "idempotent": true,
+  "timeoutSeconds": 180,
+  "parameters": [
+    { "name": "SearchBase", "type": "ad-dn", "label": "Arama kökü (OU)", "required": true, "inScope": true, "help": "Yetki kapsamınızdaki bir OU" },
+    { "name": "MaxGroups", "type": "int", "label": "En fazla grup", "required": true, "min": 1, "max": 5000, "default": "500" }
+  ]
+}

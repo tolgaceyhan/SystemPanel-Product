@@ -1,0 +1,15 @@
+{
+  "id": "org.example.ad-user-unlock",
+  "version": "1.0.0",
+  "title": "Kullanıcı hesap kilidini aç (örnek)",
+  "description": "Kilitlenmiş bir kullanıcı hesabının kilidini açar. Parolayı değiştirmez. Ayrıcalıklı (adminCount=1) hesaplar işlenmez. Önizleme hesabın kilit durumunu ve son hatalı parola zamanını gösterir.",
+  "executor": "server",
+  "targetType": "ad-user",
+  "risk": "medium",
+  "supportsDryRun": true,
+  "idempotent": true,
+  "timeoutSeconds": 60,
+  "parameters": [
+    { "name": "UserDn", "type": "ad-dn", "label": "Kullanıcı (DN)", "required": true, "inScope": true }
+  ]
+}

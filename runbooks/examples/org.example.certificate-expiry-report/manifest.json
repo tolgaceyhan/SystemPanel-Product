@@ -1,0 +1,16 @@
+{
+  "id": "org.example.certificate-expiry-report",
+  "version": "1.0.0",
+  "title": "Sertifika süresi raporu (örnek)",
+  "description": "Hedef sunucunun yerel bilgisayar sertifika deposunda süresi belirtilen gün içinde dolacak veya dolmuş sertifikaları listeler. Özel anahtarları okumaz, değişiklik yapmaz.",
+  "executor": "agent",
+  "targetType": "server",
+  "risk": "low",
+  "supportsDryRun": false,
+  "idempotent": true,
+  "timeoutSeconds": 60,
+  "parameters": [
+    { "name": "DaysAhead", "type": "int", "label": "Kaç gün içinde dolacaklar", "required": true, "min": 1, "max": 365, "default": "30" },
+    { "name": "Store", "type": "enum", "label": "Sertifika deposu", "required": true, "values": [ "My", "WebHosting", "Root", "CA" ], "default": "My" }
+  ]
+}

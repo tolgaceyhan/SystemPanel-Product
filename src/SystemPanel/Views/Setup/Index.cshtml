@@ -1,0 +1,52 @@
+@model SystemPanel.Controllers.SetupViewModel
+@{
+    Layout = null; // Henüz oturum yok; menü/layout kullanılmaz.
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>İlk Kurulum - @Branding.Value.ProductName</title>
+    <link href="~/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card shadow-sm" style="width: 100%; max-width: 520px;">
+        <div class="card-body p-4">
+            <h4 class="fw-bold mb-1">@Branding.Value.ProductName — İlk Kurulum</h4>
+            <p class="text-muted small mb-3">
+                Henüz yönetici hesabı yok. İlk yerel yöneticiyi oluşturun. Kurulum belirtecini sunucuda şu dosyada bulabilirsiniz
+                (yalnızca sunucu yöneticileri okuyabilir):<br />
+                <code>@ViewBag.TokenFilePath</code>
+            </p>
+
+            <form asp-action="Index" method="post">
+                <div asp-validation-summary="All" class="text-danger small"></div>
+                <div class="mb-3">
+                    <label asp-for="Token" class="form-label"></label>
+                    <input asp-for="Token" class="form-control" autocomplete="off" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="UserName" class="form-label"></label>
+                    <input asp-for="UserName" class="form-control" autocomplete="off" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                    <div class="form-text">En az 12 karakter; büyük harf, küçük harf ve rakam içermeli.</div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="ConfirmPassword" class="form-label"></label>
+                    <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Yöneticiyi oluştur</button>
+            </form>
+
+            <p class="text-muted small mt-3 mb-0">
+                Bu hesap acil durum (break-glass) yerel yöneticisidir. Günlük kullanımda AD hesaplarıyla giriş yapılır
+                (<code>RoleMapping</code>). Kurulumdan sonra belirteç dosyası silinir ve bu sayfa kapanır.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,4 +1,5 @@
 @model SystemPanel.ViewModels.Account.LoginViewModel
+@inject SystemPanel.Setup.SetupService Setup
 @{
     Layout = null; // Bu sayfa layout kullanmaz
     var returnUrl = (ViewData["ReturnUrl"] as string) ?? Url.Action("Index", "Home");
@@ -17,6 +18,15 @@
     <div class="text-center" style="width: 100%; max-width: 380px;">
         <img src="@Branding.Value.LoginLogoPath" alt="@Branding.Value.ProductName" height="60" class="mb-3" />
         <h4 class="fw-bold mb-4">Kimlik Yönetim Sistemi</h4>
+
+        <partial name="_StatusMessages" />
+        @if (await Setup.IsSetupRequiredAsync())
+        {
+            <div class="alert alert-info small text-start">
+                İlk kurulum tamamlanmamış: henüz yönetici hesabı yok.
+                <a asp-controller="Setup" asp-action="Index" class="alert-link">İlk kurulumu başlat</a>
+            </div>
+        }
 
         <div class="card p-4 shadow-sm">
             <form asp-controller="Account" asp-action="Login"

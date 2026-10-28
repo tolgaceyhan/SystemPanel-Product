@@ -56,5 +56,6 @@ namespace SystemPanel.Auditing
         public const string AgentAuthFailed = "agent.auth.failure";
 
         public const string LicenseInstall = "license.install";
+        public const string SetupCompleted = "setup.completed";
     }
 }

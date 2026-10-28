@@ -123,6 +123,15 @@ builder.Services.AddAuthentication()
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy(SystemPanel.Controllers.SetupRateLimit.PolicyName, ctx =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+            }));
     o.AddPolicy(SystemPanel.Controllers.Api.AgentRateLimit.PolicyName, ctx =>
         System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
             ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -173,6 +182,11 @@ builder.Services.AddScoped<IOrganizationalScopeResolver, OrganizationalScopeReso
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddHostedService<RolePermissionSeeder>();
 builder.Services.AddHostedService<IdentityBootstrapper>();
+
+// İlk kurulum sihirbazı (/Setup): yerel kullanıcı yokken tek kullanımlık belirteçle ilk yönetici.
+builder.Services.Configure<SystemPanel.Setup.SetupOptions>(builder.Configuration.GetSection(SystemPanel.Setup.SetupOptions.SectionName));
+builder.Services.AddScoped<SystemPanel.Setup.SetupService>();
+builder.Services.AddHostedService<SystemPanel.Setup.SetupTokenInitializer>();
 
 // Ürün lisansı (çevrimdışı, imzalı dosya). Bkz. docs/LICENSING.md
 builder.Services.Configure<SystemPanel.Licensing.LicensingOptions>(builder.Configuration.GetSection(SystemPanel.Licensing.LicensingOptions.SectionName));

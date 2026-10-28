@@ -30,6 +30,9 @@ public sealed class SystemPanelFactory : WebApplicationFactory<Program>
 
     public SystemPanelFactory() : this(null) { }
 
+    /// <summary>Bu örneğin kurulum belirteci dosyası (her fabrika kendi geçici klasörünü kullanır).</summary>
+    public string SetupTokenPath => Path.Combine(_keysPath, "setup-token.txt");
+
     /// <param name="configureServices">Uygulama servislerinden SONRA çalışır (servis değiştirmek için).</param>
     internal SystemPanelFactory(Action<IServiceCollection>? configureServices)
     {
@@ -56,16 +59,17 @@ public sealed class SystemPanelFactory : WebApplicationFactory<Program>
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
             services.AddDbContext<ApplicationDbContext>(o => o.UseSqlite(_connection));
+            services.Configure<SystemPanel.Setup.SetupOptions>(o => o.TokenFilePath = SetupTokenPath);
 
             // Şema, uygulamanın hosted service'lerinden (ör. RolePermissionSeeder) ÖNCE oluşturulmalı.
             services.Insert(0, ServiceDescriptor.Singleton<IHostedService, EnsureSchemaHostedService>());
 
             services.AddAuthentication()
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.Scheme, _ => { })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { })
                 .AddPolicyScheme(TestAuthHandler.Selector, TestAuthHandler.Selector, o =>
                 {
                     o.ForwardDefaultSelector = ctx => ctx.Request.Headers.ContainsKey(TestAuthHandler.RolesHeader)
-                        ? TestAuthHandler.Scheme
+                        ? TestAuthHandler.SchemeName
                         : IdentityConstants.ApplicationScheme;
                 });
 
@@ -105,7 +109,7 @@ public sealed class SystemPanelFactory : WebApplicationFactory<Program>
 /// <summary>Test kimliği: "X-Test-Roles: Admin,Operator". Boş değer = rolsüz ama kimliği doğrulanmış kullanıcı.</summary>
 public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
-    public const string Scheme = "Test";
+    public const string SchemeName = "Test";
     public const string Selector = "TestOrCookie";
     public const string RolesHeader = "X-Test-Roles";
 
@@ -126,8 +130,8 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(r => new Claim(ClaimTypes.Role, r)));
 
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme));
-        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme)));
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, SchemeName));
+        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName)));
     }
 }
 

@@ -1,0 +1,28 @@
+@model IEnumerable<SystemPanel.Models.AdComputer>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-light m-0">Sonuç bulunamadı.</div>
+}
+else
+{
+    <table class="table table-sm table-hover align-middle m-0">
+        <thead>
+            <tr>
+                <th style="width:40%;">Bilgisayar</th>
+                <th style="width:30%;">İşletim Sistemi</th>
+                <th style="width:30%;">Açıklama</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model)
+            {
+                <tr>
+                    <td>@c.ComputerName</td>
+                    <td>@c.OperatingSystem</td>
+                    <td>@c.Description</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,192 @@
+@model SystemPanel.ViewModels.Server.ServerDetailViewModel
+
+@{
+    ViewData["Title"] = "Sunucu Detayı";
+}
+
+<h2 class="mb-4">📊 @Model.Name Detayları</h2>
+
+<!-- ================= SERVER INFO ================= -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">🖥️ Sunucu Adı</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">💻 İşletim Sistemi</dt>
+            <dd class="col-sm-9">@Model.OperatingSystem</dd>
+
+            <dt class="col-sm-3">📍 OU Konumu</dt>
+            <dd class="col-sm-9">@Model.DistinguishedName</dd>
+
+            <dt class="col-sm-3">📝 Açıklama</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+
+            <dt class="col-sm-3">🕒 Son Oturum</dt>
+            <dd class="col-sm-9">@Model.LastLogonDate?.ToString("f")</dd>
+        </dl>
+    </div>
+</div>
+
+<!-- ================= RANGE BUTTONS ================= -->
+<div class="mb-3 text-end">
+    <a asp-action="Details" asp-route-id="@Model.Name" asp-route-range="1h"
+       class="btn btn-outline-secondary btn-sm">Son 1 Saat</a>
+    <a asp-action="Details" asp-route-id="@Model.Name" asp-route-range="6h"
+       class="btn btn-outline-secondary btn-sm">Son 6 Saat</a>
+    <a asp-action="Details" asp-route-id="@Model.Name" asp-route-range="24h"
+       class="btn btn-outline-secondary btn-sm">Son 24 Saat</a>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<h4 class="mb-3">📈 Sunucu Performans Verileri</h4>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header text-center fw-bold">🧠 CPU Kullanımı</div>
+            <div class="card-body">
+                <canvas id="cpuChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header text-center fw-bold">💾 RAM Kullanımı</div>
+            <div class="card-body">
+                <canvas id="ramChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header text-center fw-bold">📂 Disk Kullanımı</div>
+            <div class="card-body">
+                <canvas id="diskChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    @{
+        var cpuHistory = Model.MetricHistory
+            .Where(x => x.MetricType == "cpu")
+            .OrderBy(x => x.CreatedAt)
+            .ToList();
+
+        var ramHistory = Model.MetricHistory
+            .Where(x => x.MetricType == "ram")
+            .OrderBy(x => x.CreatedAt)
+            .ToList();
+    }
+
+    <script>
+        // ---------- CPU ----------
+        const cpuLabels = [
+        @foreach (var m in cpuHistory)
+        {
+            @Html.Raw($"'{m.CreatedAt:HH:mm}',")
+        }
+        ];
+
+        const cpuData = [
+        @foreach (var m in cpuHistory)
+        {
+            @Html.Raw($"{m.MetricValue},")
+        }
+        ];
+
+        new Chart(document.getElementById("cpuChart"), {
+            type: "line",
+            data: {
+                labels: cpuLabels,
+                datasets: [{
+                    label: "CPU (%)",
+                    data: cpuData,
+                    borderColor: "blue",
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+
+        // ---------- RAM ----------
+        const ramLabels = [
+        @foreach (var m in ramHistory)
+        {
+            @Html.Raw($"'{m.CreatedAt:HH:mm}',")
+        }
+        ];
+
+        const ramData = [
+        @foreach (var m in ramHistory)
+        {
+            @Html.Raw($"{m.MetricValue},")
+        }
+        ];
+
+        new Chart(document.getElementById("ramChart"), {
+            type: "line",
+            data: {
+                labels: ramLabels,
+                datasets: [{
+                    label: "RAM (%)",
+                    data: ramData,
+                    borderColor: "green",
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+
+        // ---------- DISK (MAX of all drives per timestamp) ----------
+        const diskLabels = [];
+        const diskData = [];
+
+        @foreach (var drive in Model.DiskHistory)
+        {
+            foreach (var d in drive.Value.OrderBy(x => x.CreatedAt))
+            {
+                @Html.Raw($@"
+                diskLabels.push('{d.CreatedAt:HH:mm}');
+                diskData.push({d.Usage});
+            ")
+                ;
+            }
+        }
+
+        new Chart(document.getElementById("diskChart"), {
+            type: "line",
+            data: {
+                labels: diskLabels,
+                datasets: [{
+                    label: "Disk (%)",
+                    data: diskData,
+                    borderColor: "red",
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+    </script>
+}

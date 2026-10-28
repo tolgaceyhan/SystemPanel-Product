@@ -1,0 +1,62 @@
+@using SystemPanel.Contracts.Licensing
+@model LicenseStatus
+@inject IPermissionService PermissionService
+@{
+    ViewData["Title"] = "Lisans";
+    var canManage = await PermissionService.HasPermissionAsync(User, Permissions.SettingsManage);
+    var lic = Model.License;
+    var (badge, text) = Model.State switch
+    {
+        LicenseState.Valid => ("bg-success", "Geçerli"),
+        LicenseState.GracePeriod => ("bg-warning text-dark", "Süresi doldu (ek süre)"),
+        LicenseState.Expired => ("bg-danger", "Süresi doldu"),
+        LicenseState.Invalid => ("bg-danger", "Geçersiz"),
+        LicenseState.Missing => ("bg-secondary", "Lisans yok"),
+        _ => ("bg-secondary", "Yapılandırılmamış"),
+    };
+}
+
+<h2 class="fw-bold mt-2 mb-3">Lisans</h2>
+<partial name="_StatusMessages" />
+
+<div class="card mb-4">
+    <div class="card-body">
+        <p class="mb-2">Durum: <span class="badge @badge">@text</span></p>
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <p class="text-muted">@Model.Message</p>
+        }
+
+        @if (lic != null)
+        {
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Lisans no</dt><dd class="col-sm-9"><code>@lic.LicenseId</code></dd>
+                <dt class="col-sm-3">Kurum</dt><dd class="col-sm-9">@lic.Customer</dd>
+                <dt class="col-sm-3">Sürüm</dt><dd class="col-sm-9">@lic.Edition</dd>
+                <dt class="col-sm-3">Düzenlenme</dt><dd class="col-sm-9">@lic.IssuedUtc.ToString("yyyy-MM-dd")</dd>
+                <dt class="col-sm-3">Bitiş</dt><dd class="col-sm-9">@(lic.ExpiresUtc?.ToString("yyyy-MM-dd") ?? "Süresiz")</dd>
+                <dt class="col-sm-3">Destek / güncelleme</dt><dd class="col-sm-9">@(lic.SupportExpiresUtc?.ToString("yyyy-MM-dd") ?? "-")</dd>
+                <dt class="col-sm-3">Agent sınırı</dt><dd class="col-sm-9">@(lic.MaxAgents?.ToString() ?? "Sınırsız")</dd>
+                <dt class="col-sm-3">Modüller</dt><dd class="col-sm-9">@(lic.Features.Count == 0 ? "Tümü" : string.Join(", ", lic.Features))</dd>
+            </dl>
+        }
+        else if (Model.State is LicenseState.Missing or LicenseState.Invalid or LicenseState.Expired)
+        {
+            <p class="mb-0">Değerlendirme sınırı: en fazla @SystemPanel.Licensing.LicenseLimits.UnlicensedMaxAgents etkin agent. Mevcut işlemler kesintisiz çalışmaya devam eder.</p>
+        }
+    </div>
+</div>
+
+@if (canManage && Model.State != LicenseState.NotConfigured)
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Lisans dosyası yükle</h5>
+            <form asp-action="Upload" method="post" enctype="multipart/form-data" class="d-flex gap-2">
+                @Html.AntiForgeryToken()
+                <input type="file" name="file" accept=".lic,.json" class="form-control" required />
+                <button type="submit" class="btn btn-primary">Yükle</button>
+            </form>
+        </div>
+    </div>
+}

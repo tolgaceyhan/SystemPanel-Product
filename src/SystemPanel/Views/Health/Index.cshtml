@@ -1,0 +1,124 @@
+﻿@{
+    ViewData["Title"] = "Sistem Sağlığı";
+}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="m-0">Sistem Sağlığı</h2>
+        <div class="d-flex gap-2">
+            <button id="btnRefresh" class="btn btn-outline-primary">Yenile</button>
+            <span id="lastUpdated" class="text-muted small align-self-center"></span>
+        </div>
+    </div>
+
+    <div id="summary" class="mb-3"></div>
+
+    <div id="cards" class="row g-3">
+        <!-- Kartlar JS ile doldurulacak -->
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (async function init() {
+            const $cards = document.getElementById('cards');
+            const $summary = document.getElementById('summary');
+            const $btn = document.getElementById('btnRefresh');
+            const $last = document.getElementById('lastUpdated');
+
+            async function load() {
+                try {
+                    $btn.disabled = true;
+                    $btn.textContent = 'Kontrol ediliyor...';
+
+                    const res = await fetch('/health/ready', { cache: 'no-store' });
+                    if (!res.ok) throw new Error('Health endpoint erişilemedi: ' + res.status);
+                    const data = await res.json();
+
+                    // Özet rozeti
+                    const status = data.status ?? 'Unknown';
+                    const badgeClass = status === 'Healthy' ? 'bg-success'
+                                       : status === 'Degraded' ? 'bg-warning'
+                                       : 'bg-danger';
+                    $summary.innerHTML = `
+                        <div class="alert ${badgeClass.replace('bg-', 'alert-')} mb-2">
+                            Genel Durum: <span class="badge ${badgeClass}">${status}</span>
+                        </div>
+                    `;
+
+                    // Kartları doldur
+                    $cards.innerHTML = '';
+                    (data.checks ?? []).forEach(ch => {
+                        const s = ch.status || 'Unknown';
+                        const cls = s === 'Healthy' ? 'border-success'
+                                 : s === 'Degraded' ? 'border-warning'
+                                 : 'border-danger';
+
+                        const pill = s === 'Healthy' ? 'bg-success'
+                                 : s === 'Degraded' ? 'bg-warning text-dark'
+                                 : 'bg-danger';
+
+                        const err = ch.error ? `
+                            <div class="mt-2 small text-muted">
+                                Hata: <code>${escapeHtml(ch.error)}</code>
+                            </div>` : '';
+
+                        const ms = Math.round(ch.duration ?? 0);
+
+                        const col = document.createElement('div');
+                        col.className = 'col-12 col-md-6 col-xl-4';
+
+                        col.innerHTML = `
+                            <div class="card h-100 ${cls}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="card-title text-capitalize mb-2">${prettyName(ch.name)}</h5>
+                                        <span class="badge ${pill}">${s}</span>
+                                    </div>
+                                    <p class="card-text small mb-1">Süre: <strong>${ms} ms</strong></p>
+                                    ${err}
+                                </div>
+                            </div>
+                        `;
+                        $cards.appendChild(col);
+                    });
+
+                    $last.textContent = 'Son güncelleme: ' + new Date().toLocaleString();
+                } catch (e) {
+                    console.error(e);
+                    $summary.innerHTML = `
+                        <div class="alert alert-danger">
+                            Sağlık verisi alınamadı. Ayrıntı için konsola bakın.
+                        </div>`;
+                } finally {
+                    $btn.disabled = false;
+                    $btn.textContent = 'Yenile';
+                }
+            }
+
+            function prettyName(name) {
+                // health check anahtarlarını güzel adlara çevir
+                const map = {
+                    'ldap': 'LDAP',
+                    'db': 'Veritabanı',
+                    'filesystem': 'Dosya Sistemi',
+                    'sms': 'SMS',
+                    'sccm': 'SCCM'
+                };
+                return map[name?.toLowerCase()] ?? name ?? 'Bilinmiyor';
+            }
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"'`=\/]/g, c =>
+                    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[c])
+                );
+            }
+
+            document.getElementById('btnRefresh').addEventListener('click', load);
+
+            // ilk yükleme + periyodik yenileme (30 sn)
+            await load();
+            setInterval(load, 30000);
+        })();
+    </script>
+}

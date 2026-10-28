@@ -1,0 +1,63 @@
+@model SystemPanel.Models.SccmDpServerInfo
+
+<h3>@Model.ServerName</h3>
+
+<p><b>Site Code:</b> @Model.SiteCode</p>
+<p><b>IP Address:</b> @Model.IpAddress</p>
+
+@if (!Model.Services.Any())
+{
+    <div class="alert alert-warning">Servis bilgisi alınamadı.</div>
+}
+else
+{
+    <table class="table table-bordered">
+        <tr>
+            <th>Servis</th>
+            <th>Durum</th>
+            <th>Ham</th>
+            <th>İşlem</th>
+        </tr>
+
+        @foreach (var s in Model.Services)
+        {
+            <tr>
+                <td>@s.ServiceName</td>
+                <td>@s.State</td>
+                <td>@s.RawStatus</td>
+                <td>
+                    <button class="btn btn-sm btn-success"
+                            onclick="action('StartService','@s.ServiceName')">
+                        ▶
+                    </button>
+                    <button class="btn btn-sm btn-danger"
+                            onclick="action('StopService','@s.ServiceName')">
+                        ⏹
+                    </button>
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+<script>
+    // Antiforgery token'ı wwwroot/js/csrf.js tarafından otomatik eklenir.
+    function action(act, svc) {
+        if (!confirm(svc + ' için "' + act + '" işlemi uygulansın mı?')) return;
+        const body = new URLSearchParams({ serverName: '@Model.ServerName', serviceName: svc });
+        fetch('/Sccm/' + act, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        })
+        .then(async r => {
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.success) {
+                alert(data.message || ('İşlem başarısız (' + r.status + ')'));
+                return;
+            }
+            location.reload();
+        })
+        .catch(() => alert('Sunucuya ulaşılamadı.'));
+    }
+</script>

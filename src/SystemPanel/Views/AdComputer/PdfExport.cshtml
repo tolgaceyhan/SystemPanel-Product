@@ -1,0 +1,57 @@
+@model IEnumerable<SystemPanel.ViewModels.AdComputer.AdComputerViewModel>
+@{
+	Layout = null; // PDF çıktılarında sade layout tercih
+}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>AD Bilgisayar Çıktısı</title>
+	<style>
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 12px;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		th, td {
+			border: 1px solid #ccc;
+			padding: 6px 8px;
+		}
+
+		th {
+			background: #f6f6f6;
+		}
+	</style>
+</head>
+<body>
+	<h3>Bilgisayar Listesi</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>Ad</th>
+				<th>İşletim Sistemi</th>
+				<th>Açıklama</th>
+				<th>Son Oturum</th>
+				<th>Durum</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var item in Model ?? Enumerable.Empty<SystemPanel.ViewModels.AdComputer.AdComputerViewModel>())
+			{
+				<tr>
+					<td>@item.Name</td>
+					<td>@item.OperatingSystem</td>
+					<td>@item.Description</td>
+					<td>@item.LastLogonDate</td>
+					<td>@item.Status</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+</body>
+</html>

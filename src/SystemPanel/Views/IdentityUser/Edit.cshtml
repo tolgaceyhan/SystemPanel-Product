@@ -1,0 +1,25 @@
+
+@model Microsoft.AspNetCore.Identity.IdentityUser
+
+@{
+    ViewData["Title"] = "Kullanıcıyı Düzenle";
+}
+
+<h2>Kullanıcıyı Düzenle</h2>
+
+<form method="post" asp-action="Edit">
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    <div class="mb-3">
+        <label class="form-label">Kullanıcı Adı</label>
+        <input type="text" class="form-control" value="@Model.UserName" disabled />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">E-posta</label>
+        <input type="email" class="form-control" name="email" value="@Model.Email" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+    <a href="@Url.Action("Index", "UserManagement")" class="btn btn-secondary">İptal</a>
+</form>

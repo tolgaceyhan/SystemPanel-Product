@@ -1,0 +1,48 @@
+<Window x:Class="SystemPanel.Dashboard.ScreenSetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="İlk Kurulum"
+        Width="460"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <StackPanel Margin="20">
+        <TextBlock Text="SystemPanel sunucu adresi"
+                   FontSize="14"
+                   FontWeight="SemiBold"/>
+        <TextBox x:Name="ApiBaseUrlBox"
+                 Margin="0,6,0,2"
+                 Height="26"
+                 VerticalContentAlignment="Center"/>
+        <TextBlock Text="Örnek: https://sunucu-adi  (yalnızca http/https)"
+                   Foreground="Gray"
+                   Margin="0,0,0,14"/>
+
+        <TextBlock Text="Bu bilgisayar hangi ekranı gösterecek?"
+                   FontSize="14"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,6"/>
+        <TextBox x:Name="ScreenBox"
+                 Height="26"
+                 Width="120"
+                 HorizontalAlignment="Left"
+                 VerticalContentAlignment="Center"/>
+        <TextBlock Text="Panel yönetiminde tanımlı ekran kodu (ör. A, B, C)."
+                   Foreground="Gray"
+                   Margin="0,2,0,10"/>
+
+        <TextBlock x:Name="ErrorText"
+                   Foreground="OrangeRed"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,10"
+                   Visibility="Collapsed"/>
+
+        <Button Content="Kaydet ve Başlat"
+                Height="32"
+                Width="160"
+                HorizontalAlignment="Right"
+                IsDefault="True"
+                Click="Save_Click"/>
+    </StackPanel>
+</Window>

@@ -1,0 +1,45 @@
+@model IEnumerable<SystemPanel.Models.ServiceStatus>
+<div class="alert alert-warning">
+    <strong>Demo verisi:</strong> Bu ekrandaki servis listesi ve başlat/durdur işlemleri bellek içi örnek veridir;
+    gerçek sunucu servislerini göstermez ve etkilemez. Gerçek servis durumu için Sunucu İzleme / SCCM ekranlarını kullanın.
+</div>
+<h2 class="mb-4">Web Servis Durumları</h2>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Servis Adı</th>
+            <th>Durum</th>
+            <th>İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var service in Model)
+        {
+            <tr>
+                <td>@service.ServiceName</td>
+                <td class="fw-bold @(service.State == "Running" ? "text-success" : "text-danger")">
+                    @service.State
+                </td>
+                <td>
+                    @if (service.State == "Stopped")
+                    {
+                        <form method="post" asp-action="Start" asp-route-id="@service.Id" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success btn-sm">Başlat</button>
+                        </form>
+                    }
+                    else if (service.State == "Running")
+                    {
+                        <form method="post" asp-action="Stop" asp-route-id="@service.Id" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger btn-sm">Durdur</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a href="@Url.Action("Index", "Home")" class="btn btn-secondary mt-3">← Panele Dön</a>

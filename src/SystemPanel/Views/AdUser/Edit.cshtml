@@ -1,0 +1,506 @@
+@using SystemPanel.ViewModels.AdUser
+@model EditAdUserViewModel
+
+@{
+    ViewData["Title"] = "Kullanici Düzenle - " + (Model?.DisplayName ?? "");
+    // Layout burada normal çalisir (Views/Shared/_Layout.cshtml)
+}
+
+<div class="container mt-4">
+
+    <h3><i class="fas fa-user-edit me-2"></i> @Model.DisplayName Kullanici Düzenleme</h3>
+    <hr />
+
+    <ul class="nav nav-tabs" id="editTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#infoTab" type="button">Kullanici Bilgileri</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#groupTab" type="button">Gruplar</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#passwordTab" type="button">Parola</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#statusTab" type="button">Hesap Durumu</button>
+        </li>
+     
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ouTab" type="button">OU Bilgisi</button>
+        </li>
+    </ul>
+
+    <div class="tab-content border p-3">
+
+        <!-- 1) USER INFO -->
+        <div class="tab-pane fade show active" id="infoTab">
+            <form method="post" asp-action="Edit">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="Id" value="@Model.DistinguishedName" />
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Ad (GivenName)</label>
+                        <input class="form-control" name="GivenName" value="@Model.GivenName" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Soyad (Surname)</label>
+                        <input class="form-control" name="Surname" value="@Model.Surname" />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">Görünen Ad (DisplayName)</label>
+                        <input class="form-control" name="DisplayName" value="@Model.DisplayName" />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">Kullanici Adi (sAMAccountName)</label>
+                        <input class="form-control" value="@Model.SamAccountName" readonly />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">E-Posta</label>
+                        <input class="form-control" name="Mail" value="@Model.Mail" />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">UPN</label>
+                        <input class="form-control" name="UserPrincipalName" value="@Model.UserPrincipalName" />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">Mail Nickname</label>
+                        <input class="form-control" name="MailNickname" value="@Model.MailNickname" />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">Telefon</label>
+                        <input class="form-control" name="TelephoneNumber" value="@Model.TelephoneNumber" />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">Mobil</label>
+                        <input class="form-control" name="Mobile" value="@Model.Mobile" />
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold">Departman</label>
+                        <input class="form-control" name="Department" value="@Model.Department" />
+                    </div>
+
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label fw-bold">Açiklama</label>
+                        <textarea class="form-control" name="Description">@Model.Description</textarea>
+                    </div>
+
+                    <div class="col-md-6 mt-4">
+                        <label class="form-label fw-bold">Olusturulma</label>
+                        <input class="form-control bg-light" readonly value="@Model.WhenCreated?.ToString("dd.MM.yyyy HH:mm")" />
+                    </div>
+
+                    <div class="col-md-6 mt-4">
+                        <label class="form-label fw-bold">Son Degisiklik</label>
+                        <input class="form-control bg-light" readonly value="@Model.WhenChanged?.ToString("dd.MM.yyyy HH:mm")" />
+                    </div>
+
+                    <div class="col-md-12 mt-4">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Kaydet
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- 2) GROUPS -->
+        <div class="tab-pane fade" id="groupTab">
+            <input type="hidden" id="userDn" value="@Model.DistinguishedName" />
+
+            <div class="row">
+                <div class="col-md-5">
+                    <h6>Mevcut Gruplar</h6>
+                    <table class="table table-sm" id="tblUserGroups">
+                        <tbody><tr><td class="text-muted small">Tab açilinca yüklenecek...</td></tr></tbody>
+                    </table>
+                </div>
+
+                <div class="col-md-7">
+                    <h6>Gruba Ekle</h6>
+
+                    <div class="input-group mb-2">
+                        <input id="txtGroupSearch" class="form-control" placeholder="Grup ara..." />
+                        <button id="btnGroupSearch" class="btn btn-outline-secondary" type="button">Ara</button>
+                    </div>
+
+                    <table class="table table-sm" id="tblAllGroups">
+                        <tbody><tr><td class="text-muted">Arama yapin.</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3) PASSWORD -->
+        <div class="tab-pane fade" id="passwordTab">
+            <h5><i class="fas fa-key me-2"></i> Parola Islemleri</h5>
+            <hr />
+
+            <input type="hidden" id="pwdUserDn" value="@Model.DistinguishedName" />
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Yeni Parola</label>
+                <div class="input-group">
+                    <input id="newPassword" class="form-control" placeholder="Yeni parola girin" />
+                    <button class="btn btn-outline-secondary" type="button" onclick="generatePassword()">Üret</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary me-2" type="button" onclick="resetPassword()">Parolayi Yenile</button>
+            <button class="btn btn-warning me-2" type="button" onclick="resetPasswordUnlock()">Parola + Kilidi Kaldir</button>
+            <button class="btn btn-danger" type="button" onclick="unlockOnly()">Sadece Kilidi Aç</button>
+
+            <div id="pwdResult" class="mt-3 fw-bold text-success"></div>
+        </div>
+
+        <!-- 4) STATUS -->
+        <div class="tab-pane fade" id="statusTab">
+            <h5><i class="fas fa-user-shield me-2"></i> Hesap Durumu</h5>
+            <hr />
+
+            <input type="hidden" id="statusUserDn" value="@Model.DistinguishedName" />
+
+            <div class="alert alert-info">
+                <strong>Durum:</strong>
+                @if (Model.Enabled)
+                {
+                    <span class="badge bg-success">Aktif</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">Pasif</span>
+                }
+
+                <br />
+
+                <strong>Kilit:</strong>
+                @if (Model.IsLocked)
+                {
+                    <span class="badge bg-warning text-dark">Kilitli</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">Kilitli Degil</span>
+                }
+            </div>
+
+            <button class="btn btn-warning me-2" type="button" onclick="disableUser()">Hesabi Pasiflestir</button>
+            <button class="btn btn-success me-2" type="button" onclick="enableUser()">Hesabi Aktiflestir</button>
+            <button class="btn btn-primary" type="button" onclick="unlockUser()">Kilidi Aç</button>
+
+            <div id="statusResult" class="mt-3 fw-bold"></div>
+        </div>
+
+        <!-- 5) MOVE -->
+        <div class="tab-pane fade" id="moveTab">
+            <h5><i class="fas fa-exchange-alt me-2"></i> OU Tasima</h5>
+            <hr />
+
+            <input type="hidden" id="moveUserDn" value="@Model.DistinguishedName" />
+
+            <label class="form-label fw-bold">Mevcut OU</label>
+            <div class="alert alert-secondary">
+                <code>@Model.OuPath</code>
+            </div>
+
+            <label class="form-label fw-bold">Hedef OU</label>
+            <select id="targetOu" class="form-select">
+                <option value="">Tab açilinca yüklenecek...</option>
+            </select>
+
+            <button class="btn btn-primary mt-3" type="button" onclick="moveUser()">Tasi</button>
+            <div id="moveResult" class="mt-3 fw-bold"></div>
+        </div>
+
+        <!-- 6) OU INFO -->
+        <div class="tab-pane fade" id="ouTab">
+            <h5>OU Bilgisi</h5>
+
+            <div class="alert alert-info mt-3">
+                <strong>OU Path:</strong><br />
+                <code>@Model.OuPath</code>
+            </div>
+
+            <div class="alert alert-secondary">
+                <strong>Distinguished Name:</strong><br />
+                <code>@Model.DistinguishedName</code>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function getToken() {
+            // AntiForgeryToken artik var
+            return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+        }
+
+        function showMessage(targetId, msg, isSuccess = true) {
+            const el = document.getElementById(targetId);
+            el.classList.remove("text-success", "text-danger");
+            el.classList.add(isSuccess ? "text-success" : "text-danger");
+            el.innerHTML = msg;
+        }
+
+        // --- LOADERS (LAZY) ---
+        let groupsLoaded = false;
+        let ousLoaded = false;
+
+        async function loadUserGroups() {
+            const userDn = document.getElementById("userDn").value;
+            const tbody = document.querySelector('#tblUserGroups tbody');
+            tbody.innerHTML = `<tr><td class="text-muted small">Yükleniyor...</td></tr>`;
+
+            const resp = await fetch(`/ad-users/user-groups?dn=${encodeURIComponent(userDn)}`);
+            const data = await resp.json();
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td class="text-muted">Grup bulunamadi.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            data.forEach(g => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <strong>${g.name}</strong><br />
+                            <small class="text-muted">${g.distinguishedName}</small>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-danger" type="button" onclick="removeFromGroup('${g.distinguishedName}')">Sil</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        document.getElementById("btnGroupSearch").addEventListener("click", () => searchGroups());
+
+        async function searchGroups() {
+            const term = document.getElementById("txtGroupSearch").value.trim();
+            const tbody = document.querySelector('#tblAllGroups tbody');
+
+            tbody.innerHTML = `<tr><td class="text-muted">Yükleniyor...</td></tr>`;
+
+            const resp = await fetch(`/ad-users/search-groups?term=${encodeURIComponent(term)}`);
+            const data = await resp.json();
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td class="text-muted">Sonuç yok.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            data.forEach(g => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <strong>${g.name}</strong><br/>
+                            <small>${g.samAccountName ?? ""}</small><br/>
+                            <small class="text-muted">${g.description ?? ""}</small>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-primary" type="button" onclick="addToGroup('${g.distinguishedName}')">Ekle</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        async function addToGroup(groupDn) {
+            const userDn = document.getElementById("userDn").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/add-to-group", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "RequestVerificationToken": token
+                },
+                body: `userDn=${encodeURIComponent(userDn)}&groupDn=${encodeURIComponent(groupDn)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) loadUserGroups();
+            else alert("Gruba eklenemedi.");
+        }
+
+        async function removeFromGroup(groupDn) {
+            const userDn = document.getElementById("userDn").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/remove-from-group", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "RequestVerificationToken": token
+                },
+                body: `userDn=${encodeURIComponent(userDn)}&groupDn=${encodeURIComponent(groupDn)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) loadUserGroups();
+            else alert("Gruptan çikarilamadi.");
+        }
+
+        function generatePassword() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!#$%";
+            let pass = "";
+            // Kriptografik rastgelelik (Math.random tahmin edilebilir).
+            const rnd = new Uint32Array(14);
+            crypto.getRandomValues(rnd);
+            for (let i = 0; i < rnd.length; i++) pass += chars.charAt(rnd[i] % chars.length);
+            document.getElementById("newPassword").value = pass;
+        }
+
+        async function resetPassword() {
+            const userDn = document.getElementById("pwdUserDn").value;
+            const pwd = document.getElementById("newPassword").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/reset-password", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token, "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userDn=${encodeURIComponent(userDn)}&newPassword=${encodeURIComponent(pwd)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) showMessage("pwdResult", "? Parola basariyla degistirildi.");
+            else showMessage("pwdResult", "? Parola degistirilemedi." + (data.error ? " " + data.error : ""), false);
+        }
+
+        async function resetPasswordUnlock() {
+            const userDn = document.getElementById("pwdUserDn").value;
+            const pwd = document.getElementById("newPassword").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/reset-password-unlock", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token, "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userDn=${encodeURIComponent(userDn)}&newPassword=${encodeURIComponent(pwd)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) showMessage("pwdResult", "? Parola yenilendi ve hesap açildi.");
+            else showMessage("pwdResult", "? Islem basarisiz." + (data.error ? " " + data.error : ""), false);
+        }
+
+        async function unlockOnly() {
+            const userDn = document.getElementById("pwdUserDn").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/unlock", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token, "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userDn=${encodeURIComponent(userDn)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) showMessage("pwdResult", "? Hesap kilidi açildi.");
+            else showMessage("pwdResult", "? Islem basarisiz." + (data.error ? " " + data.error : ""), false);
+        }
+
+        async function disableUser() {
+            const userDn = document.getElementById("statusUserDn").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/disable", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token, "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userDn=${encodeURIComponent(userDn)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) { showMessage("statusResult", "? Kullanici pasiflestirildi."); setTimeout(() => location.reload(), 900); }
+            else showMessage("statusResult", "? Islem basarisiz." + (data.error ? " " + data.error : ""), false);
+        }
+
+        async function enableUser() {
+            const userDn = document.getElementById("statusUserDn").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/enable", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token, "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userDn=${encodeURIComponent(userDn)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) { showMessage("statusResult", "? Kullanici aktiflestirildi."); setTimeout(() => location.reload(), 900); }
+            else showMessage("statusResult", "? Islem basarisiz." + (data.error ? " " + data.error : ""), false);
+        }
+
+        async function unlockUser() {
+            const userDn = document.getElementById("statusUserDn").value;
+            const token = getToken();
+
+            const resp = await fetch("/ad-users/unlock", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token, "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userDn=${encodeURIComponent(userDn)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) { showMessage("statusResult", "? Kullanici kilidi açildi."); setTimeout(() => location.reload(), 900); }
+            else showMessage("statusResult", "? Islem basarisiz." + (data.error ? " " + data.error : ""), false);
+        }
+
+        async function loadOuDropdown() {
+            const sel = document.getElementById("targetOu");
+            sel.innerHTML = `<option value="">Yükleniyor...</option>`;
+
+            const resp = await fetch("/ad-users/ou-list");
+            const data = await resp.json();
+
+            sel.innerHTML = `<option value="">-- OU Seçin --</option>`;
+            data.forEach(ou => {
+                sel.innerHTML += `<option value="${ou.distinguishedName}">${ou.name}</option>`;
+            });
+        }
+
+        async function moveUser() {
+            const userDn = document.getElementById("moveUserDn").value;
+            const targetOuDn = document.getElementById("targetOu").value;
+            const token = getToken();
+
+            if (!targetOuDn) { alert("Hedef OU seçmelisiniz."); return; }
+
+            const resp = await fetch("/ad-users/move", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token, "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userDn=${encodeURIComponent(userDn)}&targetOuDn=${encodeURIComponent(targetOuDn)}`
+            });
+
+            const data = await resp.json();
+            if (data.ok) { showMessage("moveResult", "? Kullanici basariyla tasindi."); setTimeout(() => location.reload(), 900); }
+            else showMessage("moveResult", "? Tasima basarisiz." + (data.error ? " " + data.error : ""), false);
+        }
+
+        // LAZY LOAD: Tab açilinca
+        document.addEventListener("DOMContentLoaded", () => {
+            const tabs = document.getElementById("editTabs");
+            tabs.addEventListener("shown.bs.tab", async (ev) => {
+                const target = ev.target.getAttribute("data-bs-target");
+                if (target === "#groupTab" && !groupsLoaded) {
+                    groupsLoaded = true;
+                    await loadUserGroups();
+                }
+                if (target === "#moveTab" && !ousLoaded) {
+                    ousLoaded = true;
+                    await loadOuDropdown();
+                }
+            });
+        });
+    </script>
+}

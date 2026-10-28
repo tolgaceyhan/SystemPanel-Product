@@ -1,0 +1,26 @@
+﻿@model List<SystemPanel.Models.ServiceStatus>
+
+<h2>Servis Durumları</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Servis Adı</th>
+            <th>Durum</th>
+            <th>Hareket</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var service in Model)
+        {
+            <tr>
+                <td>@service.ServiceName</td>
+                <td>@service.Status</td>
+                <td>
+                    <a href="@Url.Action("StartService", "ApiServices", new { id = service.Id })" class="btn btn-primary">Başlat</a>
+                    <a href="@Url.Action("StopService", "ApiServices", new { id = service.Id })" class="btn btn-danger">Durdur</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

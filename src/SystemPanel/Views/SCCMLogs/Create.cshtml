@@ -1,0 +1,28 @@
+@model SystemPanel.Models.SccmLog
+
+<h2 class="mb-4">Yeni Log Kaydı Ekle</h2>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label asp-for="Ip" class="form-label">IP Adresi</label>
+        <input asp-for="Ip" class="form-control" />
+        <span asp-validation-for="Ip" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Tarih" class="form-label">Tarih</label>
+        <input asp-for="Tarih" class="form-control" type="datetime-local" />
+        <span asp-validation-for="Tarih" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ScLog" class="form-label">Log Mesajı</label>
+        <textarea asp-for="ScLog" class="form-control" rows="5"></textarea>
+        <span asp-validation-for="ScLog" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Kaydet</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary ms-2">İptal</a>
+</form>

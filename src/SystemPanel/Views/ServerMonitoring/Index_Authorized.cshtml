@@ -1,0 +1,93 @@
+@model List<SystemPanel.ViewModels.Server.ServerSummaryViewModel>
+
+@{
+    ViewData["Title"] = "Sunucu İzleme (Yetkili)";
+
+    Func<string, string> SafeId = name => name?.ToLowerInvariant()
+        .Replace(" ", "")
+        .Replace("-", "")
+        .Replace(".", "")
+        .Replace("\\", "")
+        .Replace("/", "") ?? "unknown";
+}
+
+<h2 class="mb-4">🖥️ Sunucu İzleme – Yetkili</h2>
+
+<div class="mb-3">
+    <a class="btn btn-outline-primary me-2"
+       asp-action="Manage">🛠️ Yönet</a>
+    <a class="btn btn-outline-secondary me-2"
+       asp-action="DiscoverServers">🔍 AD Keşif</a>
+</div>
+
+<!-- Sunucu Kartları -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    @foreach (var server in Model)
+    {
+        var safeId = SafeId(server.ServerName);
+        var maxDisk = server.DiskUsages.Any()
+        ? server.DiskUsages.Values.Max()
+        : 0;
+
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+
+                    <h5 class="card-title text-primary">@server.ServerName</h5>
+                    <small class="text-muted">@server.Description</small>
+
+                    <!-- CPU -->
+                    <div class="mt-3">
+                        <small>CPU</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-success"
+                                 id="cpu-bar-@safeId"
+                                 style="width:@server.CpuUsage%">
+                                <span id="cpu-@safeId">@server.CpuUsage%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RAM -->
+                    <div class="mt-2">
+                        <small>RAM</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-info"
+                                 id="ram-bar-@safeId"
+                                 style="width:@server.RamUsage%">
+                                <span id="ram-@safeId">@server.RamUsage%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DISK -->
+                    <div class="mt-2">
+                        <small>Disk</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning"
+                                 id="disk-bar-@safeId"
+                                 style="width:@maxDisk%">
+                                <span id="disk-@safeId">@maxDisk%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="btn-group mt-3">
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-action="Details"
+                           asp-route-id="@server.ServerName">
+                            Detay
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm"
+                           asp-action="Manage"
+                           asp-route-search="@server.ServerName">
+                            Düzenle
+                        </a>
+                    </div>
+
+                </div> <!-- card-body -->
+            </div> <!-- card -->
+        </div> <!-- col -->
+    }
+</div> <!-- row -->

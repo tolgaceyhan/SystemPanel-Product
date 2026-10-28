@@ -1,0 +1,68 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    Layout = null;
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="@csrfToken" />
+    <title>@ViewData["Title"] - @Branding.Value.ProductName</title>
+
+    <!-- Bootstrap -->
+    <link href="~/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- FontAwesome -->
+    <link href="~/lib/fontawesome/css/all.min.css" rel="stylesheet" />
+    <!-- Site CSS -->
+    <link rel="stylesheet" href="~/css/site.css" />
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+
+    <!-- Header -->
+    <partial name="_Header" />
+
+    <div class="container-fluid">
+        <div class="row">
+
+            <!-- Sidebar -->
+            <div class="col-md-2 col-lg-2 p-0 bg-dark text-white">
+                <partial name="_Sidebar" />
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 col-lg-10 ms-sm-auto px-4 py-4">
+                <main role="main" class="pb-3">
+                    <partial name="_LicenseBanner" />
+                    @RenderBody()
+                </main>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-light border-top">
+        <div class="container text-center">
+            <span class="text-muted">© @DateTime.Now.Year - @Branding.Value.ProductName</span>
+        </div>
+    </footer>
+
+    <div id="map-tooltip" style="display:none;"></div>
+
+    <!-- Scripts -->
+    <script src="~/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/js/csrf.js"></script>
+
+    @RenderSection("Scripts", required: false)
+    <script src="~/js/chart.js"></script>
+
+</body>
+</html>

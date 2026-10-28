@@ -1,0 +1,133 @@
+﻿@model SystemPanel.ViewModels.Alarms.AlarmFilterViewModel
+@using SystemPanel.Helpers
+
+@{
+    ViewData["Title"] = "Alarm Yönetimi";
+}
+
+<div class="d-flex justify-content-between mt-2 mb-4">
+    <h2 class="fw-bold">🔔 Alarm Yönetimi</h2>
+
+    <a href="/AlarmExport/ExportToCsv" class="btn btn-success">
+        <i class="fa fa-file-csv"></i> CSV Dışa Aktar
+    </a>
+</div>
+
+<!-- FİLTRE FORMU -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Sunucu Adı</label>
+                <input type="text" name="serverName" class="form-control" value="@Model.ServerName" placeholder="Örn: DC01" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Alarm Türü</label>
+                <select name="type" class="form-select">
+                    <option value="">Tümü</option>
+
+                    @foreach (var t in (List<string>)ViewBag.AlarmTypes)
+                    {
+                        if (Model.Type == t)
+                        {
+                            <option value="@t" selected>@t</option>
+                        }
+                        else
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    }
+                </select>
+
+
+            </div>
+
+
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Başlangıç Tarihi</label>
+                <input type="date" name="startDate" class="form-control" value="@Model.StartDate?.ToString("yyyy-MM-dd")" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Bitiş Tarihi</label>
+                <input type="date" name="endDate" class="form-control" value="@Model.EndDate?.ToString("yyyy-MM-dd")" />
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100">
+                    <i class="fa fa-filter"></i> Filtrele
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ARAMA KUTUSU -->
+<div class="d-flex justify-content-between mb-3">
+    <h5 class="text-muted">Toplam Sonuç: @Model.Results.Count</h5>
+
+    <input id="searchBox" type="text" class="form-control w-25"
+           placeholder="Tabloda ara (sunucu, mesaj)...">
+</div>
+
+<!-- ALARM TABLOSU -->
+<table id="alarmTable" class="table table-hover table-bordered align-middle shadow-sm">
+
+    <thead class="table-dark">
+        <tr>
+            <th style="width: 170px;">Sunucu</th>
+            <th style="width: 120px;">Tür</th>
+            <th>Mesaj</th>
+            <th style="width: 200px;">Tarih</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var alarm in Model.Results)
+        {
+            var severity = AlarmSeverityHelper.GetSeverityClass(alarm);
+
+            <tr class="@severity">
+                <td class="fw-bold">@alarm.ServerName</td>
+
+                <td>
+                    @if (alarm.AlarmType == "CPU")
+                    {
+                        <span class="badge bg-danger"><i class="fa fa-microchip"></i> CPU</span>
+                    }
+                    else if (alarm.AlarmType == "RAM")
+                    {
+                        <span class="badge bg-warning text-dark"><i class="fa fa-memory"></i> RAM</span>
+                    }
+                    else if (alarm.AlarmType.StartsWith("Disk"))
+                    {
+                        <span class="badge bg-info text-dark"><i class="fa fa-hdd"></i> @alarm.AlarmType</span>
+                    }
+                </td>
+
+                <td>@alarm.Message</td>
+
+                <td>@alarm.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- TABLO ARAMA SCRIPTI -->
+<script>
+    const searchBox = document.getElementById("searchBox");
+    const rows = document.querySelectorAll("#alarmTable tbody tr");
+
+    searchBox.addEventListener("keyup", function () {
+        let val = this.value.toLowerCase();
+
+        rows.forEach(r => {
+            r.style.display = r.innerText.toLowerCase().includes(val)
+                ? ""
+                : "none";
+        });
+    });
+</script>

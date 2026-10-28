@@ -1,0 +1,76 @@
+@using SystemPanel.ViewModels.Gpo
+@model CreateGpoViewModel
+@{
+    ViewData["Title"] = "Yeni GPO Oluştur";
+}
+
+<h3>Yeni GPO Oluştur</h3>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+
+    <div class="mb-3">
+        <label>GPO Adı</label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Açıklama</label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label>Organizasyon Birimi (OU)</label>
+        <div class="input-group">
+            <input asp-for="OrganizationalUnit" class="form-control" id="ouInput" readonly />
+            <button type="button" class="btn btn-secondary" onclick="openOuPopup()">Seç</button>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label>Script / Policy File</label>
+        <input type="file" asp-for="PolicyScriptFile" class="form-control" />
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="IsEnabled" class="form-check-input" />
+        <label class="form-check-label">GPO Etkin olsun</label>
+    </div>
+
+    <button class="btn btn-success">Oluştur</button>
+
+</form>
+
+<!-- OU POPUP -->
+<div id="ouPopup" class="modal" tabindex="-1" style="display:none;">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content p-3">
+            <h4>OU Seç</h4>
+            <div id="ouTreeContainer"></div>
+            <button class="btn btn-secondary mt-3" onclick="closeOuPopup()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openOuPopup() {
+        document.getElementById("ouPopup").style.display = "block";
+
+        if (!window.treeLoaded) {
+            fetch("/Gpo/Tree")
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById("ouTreeContainer").innerHTML = html;
+                    window.treeLoaded = true;
+                })
+        }
+    }
+
+    function closeOuPopup() {
+        document.getElementById("ouPopup").style.display = "none";
+    }
+
+    function selectOu(dn) {
+        document.getElementById("ouInput").value = dn;
+        closeOuPopup();
+    }
+</script>

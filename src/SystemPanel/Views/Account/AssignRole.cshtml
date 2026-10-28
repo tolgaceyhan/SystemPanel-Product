@@ -1,0 +1,39 @@
+@model (string UserId, string UserName, IEnumerable<string> AllRoles, IEnumerable<string> UserRoles)
+@using System
+
+@{
+    ViewData["Title"] = "Rol Atama";
+    var selected = new HashSet<string>(Model.UserRoles ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+    var all = Model.AllRoles ?? Enumerable.Empty<string>();
+}
+
+<h3 class="mb-3">👤 Rol Atama — <code>@Model.UserName</code></h3>
+
+@if (!all.Any())
+{
+    <div class="alert alert-warning">Sistemde tanımlı hiç rol yok.</div>
+}
+else
+{
+    <form asp-action="AssignRole" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="userId" value="@Model.UserId" />
+        <div class="row row-cols-1 row-cols-md-3 g-2">
+            @foreach (var r in all)
+            {
+                var safeId = "role_" + (r ?? "null").Replace(" ", "_").Replace(".", "_");
+                <div class="col">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="roles" value="@r" id="@safeId"
+                        @(selected.Contains(r) ? "checked" : null) />
+                        <label class="form-check-label" for="@safeId">@r</label>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Kaydet</button>
+            <a class="btn btn-secondary" href="@Url.Action("Index","AdUser")">Geri</a>
+        </div>
+    </form>
+}

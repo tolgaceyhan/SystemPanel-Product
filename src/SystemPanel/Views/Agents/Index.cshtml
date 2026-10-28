@@ -1,0 +1,73 @@
+@model List<SystemPanel.Models.Agent>
+@{
+    ViewData["Title"] = "Agent'lar";
+    var offlineAfter = TimeSpan.FromSeconds((int)(ViewBag.OfflineAfterSeconds ?? 120));
+    var legacy = ViewBag.LegacyIngestEnabled as bool? ?? false;
+}
+
+<div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+    <h2 class="fw-bold">Agent'lar</h2>
+    <a asp-action="Register" class="btn btn-primary">+ Agent Kaydet</a>
+</div>
+<partial name="_StatusMessages" />
+
+@if (legacy)
+{
+    <div class="alert alert-warning">
+        <strong>Geçiş modu açık:</strong> <code>Monitoring:AllowLegacyAnonymousIngest=true</code>. Kimlik doğrulamasız eski ingest ucu
+        kabul ediliyor. Tüm sunucular yeni agent'a geçtikten sonra kapatın.
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>Sunucu</th><th>İl</th><th>Durum</th><th>Son görülme (UTC)</th><th>IP</th><th>Sürüm</th><th>İşletim sistemi</th><th>Anahtar</th><th></th></tr>
+        </thead>
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="9" class="text-center text-muted py-4">Kayıtlı agent yok.</td></tr>
+            }
+            @foreach (var a in Model)
+            {
+                var online = a.LastSeenUtc.HasValue && DateTime.UtcNow - a.LastSeenUtc.Value <= offlineAfter;
+                <tr>
+                    <td class="fw-bold">@a.Hostname<div class="small text-muted">@a.Description</div></td>
+                    <td>
+                        <form asp-action="UpdateProvince" method="post" class="d-flex gap-1">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <input type="text" name="province" value="@a.Province" class="form-control form-control-sm" style="max-width:140px" />
+                            <button class="btn btn-sm btn-outline-secondary" type="submit">Kaydet</button>
+                        </form>
+                    </td>
+                    <td>
+                        @if (!a.IsEnabled) { <span class="badge bg-secondary">Devre dışı</span> }
+                        else if (a.LastSeenUtc == null) { <span class="badge bg-light text-dark">Hiç bağlanmadı</span> }
+                        else if (online) { <span class="badge bg-success">Çevrimiçi</span> }
+                        else { <span class="badge bg-danger">Çevrimdışı</span> }
+                    </td>
+                    <td class="text-nowrap">@a.LastSeenUtc?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@a.LastIpAddress</td>
+                    <td>@a.AgentVersion</td>
+                    <td class="small">@a.OsName @a.OsVersion</td>
+                    <td><code>@a.KeyPrefix…</code></td>
+                    <td class="text-nowrap">
+                        <form asp-action="RotateKey" method="post" class="d-inline"
+                              onsubmit="return confirm('Yeni anahtar üretilecek; mevcut anahtar hemen geçersiz olur ve agent yeni anahtarla yapılandırılmalıdır. Devam?');">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <button class="btn btn-sm btn-outline-warning" type="submit">Anahtarı yenile</button>
+                        </form>
+                        <form asp-action="SetEnabled" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <input type="hidden" name="enabled" value="@(a.IsEnabled ? "false" : "true")" />
+                            <button class="btn btn-sm @(a.IsEnabled ? "btn-outline-danger" : "btn-outline-success")" type="submit">
+                                @(a.IsEnabled ? "Devre dışı bırak" : "Etkinleştir")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

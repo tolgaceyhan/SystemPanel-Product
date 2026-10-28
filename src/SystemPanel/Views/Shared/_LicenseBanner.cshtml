@@ -1,0 +1,14 @@
+@* Lisans uyarısı: yalnızca ayarları görebilen kullanıcılara gösterilir. Lisans sorunu hiçbir işlemi durdurmaz. *@
+@inject SystemPanel.Licensing.ILicenseService LicenseService
+@inject IPermissionService PermissionService
+@if (User.Identity?.IsAuthenticated == true)
+{
+    var status = LicenseService.GetStatus();
+    if (status.ShowWarning && await PermissionService.HasPermissionAsync(User, Permissions.SettingsView))
+    {
+        <div class="alert alert-warning py-2 small">
+            <strong>Lisans:</strong> @status.Message
+            <a asp-controller="License" asp-action="Index" class="alert-link ms-2">Ayrıntılar</a>
+        </div>
+    }
+}

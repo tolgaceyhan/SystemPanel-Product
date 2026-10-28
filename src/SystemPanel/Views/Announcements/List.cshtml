@@ -1,0 +1,176 @@
+@inject SystemPanel.Security.IPermissionService PermissionService
+@{ var canManageAnnouncements = await PermissionService.HasPermissionAsync(User, SystemPanel.Security.Permissions.AnnouncementsManage); }
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@model IPagedList<SystemPanel.Models.Announcements>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h3>Duyurular</h3>
+        @if (canManageAnnouncements)
+        {
+            <a asp-action="Create" class="btn btn-success">+ Yeni Duyuru</a>
+        }
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- Filtre Formu -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="List" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="searchText" value="@ViewBag.SearchText"
+                           class="form-control" placeholder="Arama yapın...">
+                </div>
+
+                <div class="col-md-3">
+                    <select name="typeFilter" class="form-control">
+                        <option value="">Tüm Türler</option>
+                        @if (ViewBag.Types != null)
+                        {
+                            foreach (string t in ViewBag.Types)
+                            {
+                                <option value="@t" selected="@(ViewBag.TypeFilter == t ? "selected" : null)">@t</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <input type="date" name="startDate" class="form-control" value="@ViewBag.StartDate" />
+                </div>
+
+                <div class="col-md-2">
+                    <input type="date" name="endDate" class="form-control" value="@ViewBag.EndDate" />
+                </div>
+
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100">Filtrele</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Çoklu silme formu -->
+    @if (canManageAnnouncements)
+    {
+        <form asp-action="DeleteSelected" method="post">
+            @Html.AntiForgeryToken()
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span>Duyurular</span>
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        Seçilenleri Sil
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:30px;">
+                                    <input type="checkbox" id="select-all" />
+                                </th>
+                                <th>Türü</th>
+                                <th>Birim</th>
+                                <th>Açıklama</th>
+                                <th>Kayıt Tarihi</th>
+                                <th style="width:200px;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="ids" value="@item.Id" />
+                                    </td>
+                                    <td>@item.Turu</td>
+                                    <td>@item.Birimi</td>
+                                    <td>@item.Aciklama</td>
+                                    <td>@item.KayitTarihi.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Detay</a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Düzenle</a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Sil</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Türü</th>
+                            <th>Birim</th>
+                            <th>Açıklama</th>
+                            <th>Kayıt Tarihi</th>
+                            <th style="width:120px;">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Turu</td>
+                                <td>@item.Birimi</td>
+                                <td>@item.Aciklama</td>
+                                <td>@item.KayitTarihi.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Detay</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Sayfalama -->
+    <div class="d-flex justify-content-center mt-3">
+        @Html.PagedListPager(Model,
+                 page => Url.Action("List", new
+                 {
+                     page,
+                     searchText = ViewBag.SearchText,
+                     typeFilter = ViewBag.TypeFilter,
+                     startDate = ViewBag.StartDate,
+                     endDate = ViewBag.EndDate
+                 }),
+                 new PagedListRenderOptions
+        {
+            UlElementClasses = new[] { "pagination" },
+            LiElementClasses = new[] { "page-item" },
+            PageClasses = new[] { "page-link" },
+            LinkToPreviousPageFormat = "Önceki",
+            LinkToNextPageFormat = "Sonraki"
+        })
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const selectAll = document.getElementById('select-all');
+        if (selectAll) {
+            selectAll.addEventListener('click', function (e) {
+                document.querySelectorAll('input[name="ids"]').forEach(cb => cb.checked = e.target.checked);
+            });
+        }
+    </script>
+}

@@ -1,0 +1,85 @@
+﻿@model List<SystemPanel.Models.AutoHealState>
+
+<h3>🤖 Auto-Heal Durumu (İl Bazlı)</h3>
+
+<table class="table table-bordered align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>İl</th>
+            <th>Son Deneme</th>
+            <th>Sonuç</th>
+            <th>Hata</th>
+            <th>Auto-Heal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var x in Model)
+        {
+            <tr class="@(x.Disabled ? "table-warning" : (x.Success ? "" : "table-danger"))">
+                <td><strong>@x.ProvinceName</strong></td>
+
+                <td>
+                    @(x.LastAttempt == default
+                        ? "-"
+                        : x.LastAttempt.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss"))
+                </td>
+
+                <td>
+                    @if (x.Success)
+                    {
+                        <span class="badge bg-success">Başarılı</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Başarısız</span>
+                    }
+                </td>
+
+                <td class="text-muted">
+                    @x.ErrorMessage
+                </td>
+
+                <td class="text-center">
+                    <input type="checkbox"
+                           class="form-check-input autoheal-toggle"
+                           data-province="@x.ProvinceName"
+                    @(x.Disabled ? "checked" : "") />
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    document.querySelectorAll(".autoheal-toggle")
+        .forEach(cb => {
+            cb.addEventListener("change", function () {
+
+                const province = this.dataset.province;
+
+                fetch("/AutoHeal/Toggle", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: `province=${province}`
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success) {
+                        alert("İşlem başarısız");
+                        this.checked = !this.checked;
+                        return;
+                    }
+
+                    // Satır rengini güncelle
+                    this.closest("tr")
+                        .classList.toggle("table-warning", res.disabled);
+                })
+                .catch(() => {
+                    alert("Sunucu hatası");
+                    this.checked = !this.checked;
+                });
+            });
+        });
+</script>

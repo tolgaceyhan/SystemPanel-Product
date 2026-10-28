@@ -1,0 +1,21 @@
+﻿<form id="serviceControlForm">
+    <input type="text" id="serverName" placeholder="Sunucu Adı" required>
+    <input type="text" id="serviceName" placeholder="Servis Adı" required>
+    <button type="submit">Servis Durumunu Kontrol Et</button>
+</form>
+
+<script>
+    $('#serviceControlForm').submit(function(e) {
+        e.preventDefault();
+        var serverName = $('#serverName').val();
+        var serviceName = $('#serviceName').val();
+
+        $.post('/ServerMonitoring/CheckServiceStatus', { serverName: serverName, serviceName: serviceName }, function(response) {
+            if (response.isServiceRunning) {
+                alert('Servis çalışıyor');
+            } else {
+                alert('Servis çalışmıyor');
+            }
+        });
+    });
+</script>

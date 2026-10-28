@@ -1,0 +1,18 @@
+@model SystemPanel.Models.SccmLog
+
+<h2 class="mb-4">Log Detayları</h2>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">IP Adresi</h5>
+        <p class="card-text">@Model.Ip</p>
+
+        <h5 class="card-title">Tarih</h5>
+        <p class="card-text">@Model.Tarih?.ToString("dd.MM.yyyy HH:mm")</p>
+
+        <h5 class="card-title">Log Mesajı</h5>
+        <p class="card-text">@Model.ScLog</p>
+
+        <a href="@Url.Action("Index")" class="btn btn-secondary mt-3">← Geri Dön</a>
+    </div>
+</div>

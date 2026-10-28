@@ -1,0 +1,30 @@
+@model SystemPanel.ViewModels.Logs.RelatedLogsViewModel
+
+@{
+    ViewData["Title"] = "İlgili Loglar";
+}
+
+<h2 class="fw-bold mt-2 mb-2">İlgili Loglar</h2>
+<p class="text-muted">
+    #@Model.CurrentLog.Id ile aynı gün, aynı kullanıcı (@Model.CurrentLog.User) veya aynı IP (@Model.CurrentLog.IP) kaynaklı kayıtlar.
+</p>
+
+<table class="table table-sm table-hover">
+    <thead class="table-light">
+        <tr><th>Zaman</th><th>Seviye</th><th>Mesaj</th><th>Kullanıcı</th><th>IP</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model.RelatedLogs)
+        {
+            <tr class="@(log.Id == Model.CurrentLog.Id ? "table-active" : "")">
+                <td class="text-nowrap">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@log.Level</td>
+                <td><a asp-action="Details" asp-route-id="@log.Id">@log.Message</a></td>
+                <td>@log.User</td>
+                <td>@log.IP</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Details" asp-route-id="@Model.CurrentLog.Id" class="btn btn-secondary">Geri</a>

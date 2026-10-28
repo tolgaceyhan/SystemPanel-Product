@@ -1,0 +1,34 @@
+﻿@model (string UserDn, string DisplayName, string CurrentGroupsCsv)
+@{
+    ViewData["Title"] = "AD Grup Atama";
+}
+<h3 class="mb-3">👥 AD Grup Atama — <code>@Model.DisplayName</code></h3>
+
+@if (!string.IsNullOrWhiteSpace(Model.CurrentGroupsCsv))
+{
+    <div class="alert alert-info">
+        <div class="fw-bold mb-1">Şu an üye olduğu gruplar:</div>
+        <div>@Model.CurrentGroupsCsv</div>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <form asp-action="AssignGroup" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="userDn" value="@Model.UserDn" />
+            <div class="mb-2">
+                <label class="form-label">Grup DN</label>
+                <input class="form-control" name="groupDn" placeholder="CN=...,OU=...,DC=...,DC=..." />
+            </div>
+            <button class="btn btn-success" type="submit" name="op" value="add">Gruba Ekle</button>
+            <button class="btn btn-outline-danger" type="submit" name="op" value="remove">Gruptan Çıkar</button>
+            <a class="btn btn-secondary" href="@Url.Action("Index","AdUser")">Geri</a>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <div class="small text-muted">
+            İpucu: Grup DN bilmiyorsan, ADUC üzerinde gruba sağ tıklayıp “Name” ve “Distinguished Name” alanlarına bakabilirsin.
+        </div>
+    </div>
+</div>

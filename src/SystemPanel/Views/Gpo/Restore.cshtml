@@ -1,0 +1,66 @@
+@model IEnumerable<SystemPanel.ViewModels.Gpo.GpoViewModel>
+
+@{
+    ViewData["Title"] = "♻️ GPO Geri Yükleme";
+}
+
+<h2 class="mb-4"><i class="fas fa-undo-alt me-2"></i>Geri Yüklenebilir GPO'lar</h2>
+
+@if (Model != null && Model.Any())
+
+{
+        <div class="table-responsive shadow-sm">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>📄 Ad</th>
+                        <th>📝 Açıklama</th>
+                        <th>📌 Durum</th>
+                        <th class="text-center">⚙️ İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var gpo in Model)
+                {
+                            <tr>
+                                <td>@gpo.DisplayName</td>
+                                <td>@gpo.Description</td>
+                                <td>
+                            @if (gpo.IsEnabled)
+                            {
+                                            <span class="badge bg-success">Aktif</span>
+                            }
+                            else
+                            {
+                                            <span class="badge bg-danger">Pasif</span>
+                            }
+                                </td>
+                                <td class="text-center">
+                                    <form asp-action="Restore" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@gpo.Id" />
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="fas fa-upload me-1"></i> Geri Yükle
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+}
+else
+{
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-1"></i> Geri yüklenebilir GPO bulunmamaktadır.
+        </div>
+}
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Geri Dön
+    </a>
+</div>
+
+@section Scripts {
+}

@@ -1,0 +1,30 @@
+@model SystemPanel.ViewModels.ErrorViewModel
+@{
+    // Hata sayfası layout'a bağımlı değildir: layout'un kendisi hata kaynağı olabilir.
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hata - @Branding.Value.ProductName</title>
+    <link href="~/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+    <div class="container py-5" style="max-width:640px">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="text-danger mb-3">Bir hata oluştu</h3>
+                <p>@(Model?.Message ?? "İşlem sırasında beklenmeyen bir hata oluştu.")</p>
+                @if (Model?.ShowRequestId == true)
+                {
+                    <p class="mb-1">Destek ekibine iletmeniz gereken hata kodu:</p>
+                    <p><code class="fs-5">@Model.RequestId</code></p>
+                }
+                <a href="/" class="btn btn-primary">Ana sayfaya dön</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

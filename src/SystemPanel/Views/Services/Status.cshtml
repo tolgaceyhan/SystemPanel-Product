@@ -1,0 +1,62 @@
+@model SystemPanel.ViewModels.ServiceStatusViewModel
+
+<div class="alert alert-warning">
+    <strong>Demo verisi:</strong> Bu ekrandaki servis listesi ve başlat/durdur işlemleri bellek içi örnek veridir;
+    gerçek sunucu servislerini göstermez ve etkilemez. Gerçek servis durumu için Sunucu İzleme / SCCM ekranlarını kullanın.
+</div>
+<h2 class="text-center my-4">Servis Durumu</h2>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title">Servis Durumları</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Servis Adı</th>
+                        <th>Durum</th>
+                        <th>Genel Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var service in Model.Services)
+                    {
+                        <tr>
+                            <td>@service.ServiceName</td>
+                            <td>
+                                @if (service.State == "Running")
+                                {
+                                    <span class="badge bg-success">Çalışıyor</span>
+                                }
+                                else if (service.State == "Stopped")
+                                {
+                                    <span class="badge bg-danger">Duruşta</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Bilinmiyor</span>
+                                }
+                            </td>
+                            <td>
+                                @if (service.Status == "OK")
+                                {
+                                    <span class="badge bg-success">Durum: OK</span>
+                                }
+                                else if (service.Status == "Warning")
+                                {
+                                    <span class="badge bg-warning">Durum: Uyarı</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Durum: Hata</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

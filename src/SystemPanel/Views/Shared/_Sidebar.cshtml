@@ -1,0 +1,166 @@
+@using SystemPanel.Security
+@inject IPermissionService PermissionService
+@{
+    // Menü görünürlüğü yalnızca kullanım kolaylığıdır; yetki kontrolü her uçta sunucu tarafında yapılır.
+    var p = await PermissionService.GetPermissionsAsync(User);
+    bool Has(params string[] any) => any.Any(p.Contains);
+}
+
+<nav class="sidebar bg-dark text-white vh-100">
+    <div class="sidebar-header p-3 text-center">
+        <h3>@Branding.Value.ProductName</h3>
+        <img src="@Branding.Value.LogoPath" alt="@Branding.Value.ProductName" height="60" />
+    </div>
+
+    <ul class="nav flex-column px-2">
+
+        <li class="nav-item">
+            <a class="nav-link text-white" asp-controller="Home" asp-action="Index">
+                <i class="fas fa-home me-2"></i> Anasayfa
+            </a>
+        </li>
+
+        @if (Has(Permissions.AdUsersView, Permissions.AdComputersView))
+        {
+            <li class="nav-item">
+                <a class="nav-link collapsed text-white" data-bs-toggle="collapse" href="#collapseAd">
+                    <i class="fas fa-network-wired me-2"></i> Active Directory
+                </a>
+
+                <div class="collapse" id="collapseAd">
+                    <ul class="list-unstyled fw-normal pb-1 small ms-3">
+                        @if (Has(Permissions.AdUsersView))
+                        {
+                            <li><a class="nav-link" asp-controller="AdUser" asp-action="OuBrowser">OU Ağaç</a></li>
+                            <li><a class="nav-link" asp-controller="AdUser" asp-action="Index">Kullanıcılar</a></li>
+                        }
+                        @if (Has(Permissions.AdComputersView))
+                        {
+                            <li><a class="nav-link" asp-controller="AdComputer" asp-action="Index">Bilgisayarlar</a></li>
+                        }
+                    </ul>
+                </div>
+            </li>
+        }
+
+        @if (Has(Permissions.UsersManage))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="UserManagement" asp-action="Index">
+                    <i class="fas fa-user-shield me-2"></i> Kullanıcı Yönetimi
+                </a>
+            </li>
+        }
+
+        @if (Has(Permissions.SettingsView))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="Permissions" asp-action="Index">
+                    <i class="fas fa-key me-2"></i> Rol ve İzinler
+                </a>
+            </li>
+        }
+
+        @if (Has(Permissions.GpoView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="Gpo" asp-action="Index"><i class="fas fa-cogs me-2"></i> GPO Yönetimi</a></li>
+        }
+
+        @if (Has(Permissions.SettingsView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="License" asp-action="Index"><i class="fas fa-key me-2"></i> Lisans</a></li>
+        }
+
+        @if (Has(Permissions.AuditView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="Audit" asp-action="Index"><i class="fas fa-user-secret me-2"></i> Güvenlik Denetimi (Audit)</a></li>
+        }
+
+        @if (Has(Permissions.LogsView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="Logs" asp-action="Index"><i class="fas fa-journal-whills me-2"></i> Uygulama Logları</a></li>
+        }
+
+        @if (Has(Permissions.MonitoringView))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="MapUnits" asp-action="Index">
+                    <i class="fas fa-map-marked-alt me-2"></i> İl / Birim Haritası
+                </a>
+            </li>
+        }
+
+        @if (Has(Permissions.SccmView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="Sccm" asp-action="Dps"><i class="fas fa-server me-2"></i> SCCM Yönetimi</a></li>
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="SccmLogs" asp-action="Index"><i class="fas fa-file-alt me-2"></i> SCCM Logları</a></li>
+        }
+
+        @if (Has(Permissions.MonitoringManage))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="Agents" asp-action="Index">
+                    <i class="fas fa-plug me-2"></i> Agent'lar
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="AutoHeal" asp-action="Index">
+                    <i class="fas fa-robot me-2"></i> Auto-Heal Durumu
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="AutoHeal" asp-action="Settings">
+                    <i class="fas fa-sliders-h me-2"></i> Auto-Heal Ayarları
+                </a>
+            </li>
+        }
+
+        @if (Has(Permissions.ServersView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="ServerMonitoring" asp-action="Index"><i class="fas fa-eye me-2"></i> Sunucu İzleme</a></li>
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="ServerMonitoring" asp-action="DiscoverServers"><i class="fas fa-search-location me-2"></i> Sunucu Keşfi</a></li>
+        }
+
+        @if (Has(Permissions.MonitoringView))
+        {
+            <li class="nav-item"><a class="nav-link text-white" asp-controller="Alarms" asp-action="Index"><i class="fas fa-exclamation-triangle me-2"></i> Alarm Detayları</a></li>
+        }
+
+        @if (Has(Permissions.DashboardManage))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="SystemDashboardAdmin" asp-action="Index">
+                    <i class="fas fa-tv me-2"></i> NOC Dashboard Ekranları
+                </a>
+            </li>
+        }
+
+        @if (Has(Permissions.FilesView))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="FileManagement" asp-action="Index">
+                    <i class="fas fa-folder-open me-2"></i> Dosya Yönetimi
+                </a>
+            </li>
+        }
+
+        @if (Has(Permissions.AnnouncementsView))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="Announcements" asp-action="List">
+                    <i class="fas fa-bullhorn me-2"></i> Duyurular
+                </a>
+            </li>
+        }
+
+        @if (Has(Permissions.SmsSend))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-white" asp-controller="SMS" asp-action="Send">
+                    <i class="fas fa-sms me-2"></i> SMS Gönder
+                </a>
+            </li>
+        }
+
+    </ul>
+</nav>

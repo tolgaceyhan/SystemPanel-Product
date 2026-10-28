@@ -1,0 +1,19 @@
+﻿@model SystemPanel.Models.AdUser
+@{
+    ViewData["Title"] = "Kullanıcı Sil";
+}
+<h3 class="mb-3 text-danger">🗑️ Kullanıcı Sil</h3>
+
+<div class="alert alert-warning">
+    <p><strong>@Model.DisplayName (@Model.UserName)</strong> kullanıcısını silmek üzeresiniz.</p>
+    <p>DN: <code>@Model.DistinguishedName</code></p>
+</div>
+
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Evet, Sil</button>
+        <a class="btn btn-secondary" href="@Url.Action("Index","AdUser")">Vazgeç</a>
+    </div>
+</form>

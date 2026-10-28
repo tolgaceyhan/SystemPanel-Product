@@ -1,0 +1,28 @@
+@model IEnumerable<SystemPanel.ViewModels.Server.ServerStatusViewModel>
+
+@{
+    ViewData["Title"] = "Sunucu Durumları";
+}
+
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Server Name</th>
+            <th>Service Name</th>
+            <th>State</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var server in Model)
+        {
+            <tr>
+                <td>@server.ServerName</td>
+                <td>@server.ServiceName</td>
+                <td>@server.State</td>
+                <td>@server.Status</td>
+            </tr>
+        }
+    </tbody>
+</table>

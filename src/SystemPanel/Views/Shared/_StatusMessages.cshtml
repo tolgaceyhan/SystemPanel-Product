@@ -1,0 +1,19 @@
+@* Controller'ların TempData ile bıraktığı sonuç mesajları (PRG deseni). *@
+@{
+    var success = (TempData["Success"] ?? TempData["SuccessMessage"] ?? TempData["Message"] ?? TempData["ok"]) as string;
+    var error = (TempData["Error"] ?? TempData["ErrorMessage"]) as string;
+}
+@if (!string.IsNullOrWhiteSpace(success))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+    </div>
+}
+@if (!string.IsNullOrWhiteSpace(error))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+    </div>
+}

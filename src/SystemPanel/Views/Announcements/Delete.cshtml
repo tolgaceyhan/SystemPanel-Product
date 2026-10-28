@@ -1,0 +1,32 @@
+﻿@model SystemPanel.Models.Announcements
+
+@{
+    ViewBag.Title = "Duyuru Sil";
+}
+
+<h2 class="mt-3">Duyuruyu Sil</h2>
+
+<div class="alert alert-warning">
+    Bu duyuruyu silmek istediğinizden emin misiniz?
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Türü</dt>
+    <dd class="col-sm-9">@Model.Turu</dd>
+
+    <dt class="col-sm-3">Birim</dt>
+    <dd class="col-sm-9">@Model.Birimi</dd>
+
+    <dt class="col-sm-3">Açıklama</dt>
+    <dd class="col-sm-9">@Model.Aciklama</dd>
+
+    <dt class="col-sm-3">Detay</dt>
+    <dd class="col-sm-9">@Model.Detay</dd>
+</dl>
+
+<form asp-action="DeleteConfirmed" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Sil</button>
+    <a asp-action="List" class="btn btn-secondary">İptal</a>
+</form>

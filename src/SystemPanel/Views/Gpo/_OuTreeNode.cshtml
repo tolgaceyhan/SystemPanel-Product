@@ -1,0 +1,19 @@
+﻿@model SystemPanel.ViewModels.Gpo.GpoOuTreeViewModel
+
+<li>
+    <div class="d-flex align-items-center mb-1">
+        <span class="ou-node-select" data-dn="@Model.DistinguishedName" data-title="@Model.OuName" style="cursor:pointer;">
+            <i class="fas fa-folder me-1 text-warning"></i> @Model.OuName
+        </span>
+    </div>
+
+    @if (Model.ChildOus != null && Model.ChildOus.Any())
+    {
+        <ul class="ms-3 list-unstyled">
+            @foreach (var child in Model.ChildOus)
+            {
+                @Html.Partial("_OuTreeNode", child)
+            }
+        </ul>
+    }
+</li>

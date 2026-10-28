@@ -1,0 +1,52 @@
+﻿@{
+    ViewData["Title"] = "Active Directory | Bilgisayarlar";
+    var isLocalAdmin = User.IsInRole("LocalAdmin");
+    var rootOu = User.FindFirst("ou:root")?.Value;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Bilgisayar Yönetimi</h4>
+</div>
+
+<div class="input-group mb-3">
+    <input type="text" id="txtOuComp" class="form-control" placeholder="OU" value="@rootOu" @(isLocalAdmin ? "readonly" : "")>
+    <button id="btnLoadComp" class="btn btn-primary">Listele</button>
+</div>
+
+<div id="computersList" class="border rounded bg-white p-2" style="min-height:300px;">
+    <div class="text-muted small">Bilgisayar listesi yüklenecek...</div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const list = document.getElementById("computersList");
+            const btn = document.getElementById("btnLoadComp");
+            const ouInput = document.getElementById("txtOuComp");
+            const rootOu = '@(rootOu ?? "")';
+            const isLocalAdmin = '@User.IsInRole("LocalAdmin")'.toLowerCase() === 'true';
+
+            async function loadComputers() {
+                const ou = encodeURIComponent(isLocalAdmin ? rootOu : ouInput.value);
+                const url = `/api/ad/computers?provinceOrDn=${ou}`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                list.innerHTML = "";
+                if (!data || !data.length) {
+                    list.innerHTML = '<div class="text-muted small">Kayıt bulunamadı.</div>';
+                    return;
+                }
+                data.forEach(c => {
+                    const div = document.createElement("div");
+                    div.className = "d-flex justify-content-between border-bottom py-1 small";
+                    div.innerHTML = `<span>${c.name}</span><span>${c.operatingSystem ?? ""}</span>`;
+                    list.appendChild(div);
+                });
+            }
+
+            btn.addEventListener("click", loadComputers);
+            loadComputers();
+        });
+    </script>
+}

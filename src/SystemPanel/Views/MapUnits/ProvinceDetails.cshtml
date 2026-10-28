@@ -1,0 +1,36 @@
+﻿@model SystemPanel.ViewModels.ProvinceDetailsViewModel
+
+<h2>@Model.ProvinceName – Distribution Points</h2>
+
+<table class="table table-bordered table-sm mt-3">
+    <thead class="table-light">
+        <tr>
+            <th>Server</th>
+            <th>IP</th>
+            <th>WDS</th>
+            <th>CcmExec</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model.DistributionServers)
+        {
+            var rowClass = (s.WdsRunning && s.CcmExecRunning)
+            ? "dp-ok"
+            : "dp-problem";
+            <tr class="@rowClass">
+                <td><strong>@s.ServerName</strong></td>
+                <td>@s.IpAddress</td>
+                <td>
+                    <span class="service-icon @(s.WdsRunning ? "service-ok" : "service-bad")">
+                        @(s.WdsRunning ? "Running" : "Stopped")
+                    </span>
+                </td>
+                <td>
+                    <span class="service-icon @(s.CcmExecRunning ? "service-ok" : "service-bad")">
+                        @(s.CcmExecRunning ? "Running" : "Stopped")
+                    </span>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,55 @@
+@model SystemPanel.ViewModels.AdComputer.AdComputerViewModel
+@{
+    ViewData["Title"] = $"Bilgisayar Detayı - {Model.Name}";
+}
+
+<div class="container mt-4">
+    <h4><i class="fas fa-desktop me-2"></i> @Model.Name Bilgileri</h4>
+    <hr />
+
+    <dl class="row">
+
+        <dt class="col-sm-3">Bilgisayar Adı</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">İşletim Sistemi</dt>
+        <dd class="col-sm-9">@Model.OperatingSystem</dd>
+
+        <dt class="col-sm-3">Son Logon</dt>
+        <dd class="col-sm-9">@Model.LastLogonDate?.ToString("g")</dd>
+
+        <dt class="col-sm-3">Durum</dt>
+        <dd class="col-sm-9">
+            @if (Model.Status == "Aktif")
+            {
+                <span class="badge bg-success">Aktif</span>
+            }
+            else
+            {
+                <span class="badge bg-danger">Pasif</span>
+            }
+        </dd>
+
+        <dt class="col-sm-3">Distinguished Name</dt>
+        <dd class="col-sm-9 text-muted">@Model.DistinguishedName</dd>
+
+        <dt class="col-sm-3">Açıklama</dt>
+        <dd class="col-sm-9">@Model.Description</dd>
+    </dl>
+
+    <!-- LAPS: yalnızca istek üzerine (laps.read + audit) -->
+    <div class="alert alert-light border mt-4">
+        <strong>LAPS Yönetici Parolası:</strong>
+        <span id="laps-value" class="font-monospace ms-2"></span>
+        <button type="button" class="btn btn-sm btn-outline-primary ms-2"
+                onclick="SystemPanelLaps.reveal('@Model.Name', document.getElementById('laps-value'), document.getElementById('laps-info'))">Göster</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary ms-1"
+                onclick="SystemPanelLaps.copy(document.getElementById('laps-value'))">Kopyala</button>
+        <div id="laps-info" class="small text-muted mt-1"></div>
+    </div>
+    <script src="~/js/laps-reveal.js"></script>
+
+    <a asp-action="Index" class="btn btn-secondary mt-4">
+        <i class="fas fa-arrow-left me-1"></i> Listeye Dön
+    </a>
+</div>

@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "GPO İçe Aktar";
+    var allowImport = ViewBag.AllowImport as bool? ?? false;
+}
+
+<h2 class="mb-4">📥 GPO İçe Aktar</h2>
+<partial name="_StatusMessages" />
+
+@if (!allowImport)
+{
+    <div class="alert alert-warning">
+        GPO içe aktarma bu kurulumda kapalıdır (<code>Gpo:AllowImport=false</code>). İçe aktarma hedef GPO'nun mevcut
+        ayarlarının üzerine yazar; açmadan önce docs/SECURITY.md'deki onay sürecine bakın.
+    </div>
+}
+
+<div class="alert alert-info">
+    İçe aktarma, <strong>hedef GPO'nun tüm ayarlarını yedektekilerle değiştirir</strong>. İşlem audit kaydına yazılır.
+</div>
+
+<form asp-action="Import" method="post" enctype="multipart/form-data"
+      onsubmit="return confirm('Hedef GPO\'nun ayarları yedektekilerle değiştirilecek. Devam edilsin mi?');">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label">Yedek arşivi (.zip)</label>
+        <input type="file" name="backupFile" accept=".zip" class="form-control" required />
+        <span class="form-text">Backup-GPO ile alınmış yedek klasörünün .zip arşivi.</span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Yedekteki GPO adı</label>
+        <input type="text" name="backupGpoName" class="form-control" required maxlength="200" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Hedef GPO adı</label>
+        <input type="text" name="targetName" class="form-control" required maxlength="200" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" disabled="@(!allowImport)">
+        <i class="fas fa-file-import me-1"></i> İçe Aktar
+    </button>
+    <a href="@Url.Action("Index","Gpo")" class="btn btn-secondary ms-2">İptal</a>
+</form>

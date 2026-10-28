@@ -1,0 +1,32 @@
+@model SystemPanel.ViewModels.Statistics.StatisticsViewModel
+
+<h4 class="mb-3">Sistem İstatistikleri</h4>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow-sm">
+            <div class="card-body">
+                <h6>Toplam Kullanıcı</h6>
+                <p class="display-6 fw-bold">@(Model.TotalUsers?.ToString() ?? "—")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-white bg-success shadow-sm">
+            <div class="card-body">
+                <h6>Aktif Oturum</h6>
+                <p class="display-6 fw-bold">@(Model.ActiveSessions?.ToString() ?? "—")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-white bg-warning shadow-sm">
+            <div class="card-body">
+                <h6>Sistem Durumu</h6>
+                <p class="display-6 fw-bold">@Model.SystemHealth</p>
+            </div>
+        </div>
+    </div>
+</div>

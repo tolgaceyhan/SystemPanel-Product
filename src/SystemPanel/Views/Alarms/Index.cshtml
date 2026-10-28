@@ -1,0 +1,61 @@
+﻿@model SystemPanel.ViewModels.Alarms.AlarmStatsViewModel
+
+<div class="container mt-4">
+    <h2 class="mb-4">🚨 Alarm İstatistikleri</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-dark shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Toplam Alarm</h5>
+                    <p class="card-text display-6 fw-bold">@Model.TotalAlarms</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">CPU Alarmı</h5>
+                    <p class="card-text fs-4">@Model.CpuAlarms</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">RAM Alarmı</h5>
+                    <p class="card-text fs-4">@Model.RamAlarms</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Disk Alarmı</h5>
+                    <p class="card-text fs-4">@Model.DiskAlarms</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">📄 Son 10 Alarm Kaydı</h4>
+    <table class="table table-bordered table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Sunucu</th>
+                <th>Mesaj</th>
+                <th>Tarih / Saat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var alarm in Model.Last10Alarms)
+            {
+                <tr>
+                    <td>@alarm.ServerName</td>
+                    <td>@alarm.Message</td>
+                    <td>@alarm.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

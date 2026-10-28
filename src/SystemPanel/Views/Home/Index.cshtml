@@ -1,0 +1,300 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var role = ViewData["Role"] as string ?? "User";
+}
+
+<h2 class="mb-4">📊 Sistem Paneli Dashboard</h2>
+
+<!-- ================= ROLE BADGE ================= -->
+<div class="mb-3">
+    @if (role == "Admin")
+    {
+        <span class="badge bg-danger">Admin</span>
+    }
+    else if (role == "LocalAdmin")
+    {
+        <span class="badge bg-warning text-dark">Local Admin</span>
+    }
+    else
+    {
+        <span class="badge bg-secondary">User</span>
+    }
+</div>
+
+<!-- ================= ADMIN STATS ================= -->
+<div id="adminStats" class="row g-3 mb-4 d-none">
+    <div class="col-md-4">
+        <div class="card text-bg-primary shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Toplam Kullanıcı</h6>
+                <p id="totalUsers" class="display-6 fw-bold">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-bg-success shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Aktif Oturum</h6>
+                <p id="activeSessions" class="display-6 fw-bold">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-bg-warning shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Sistem Durumu</h6>
+                <p id="systemHealth" class="display-6 fw-bold">-</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= LOCAL ADMIN STATS ================= -->
+<div id="localAdminStats" class="row g-3 mb-4 d-none">
+
+    <div class="col-md-3">
+        <div class="card text-bg-primary shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">DP Sunucu Sayısı</h6>
+                <p id="dpCount" class="display-6 fw-bold">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-warning shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Ortalama CPU</h6>
+                <p id="dpAvgCpu" class="display-6 fw-bold">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-danger shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Ortalama RAM</h6>
+                <p id="dpAvgRam" class="display-6 fw-bold">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border border-secondary shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">Kritik DP</h6>
+                <p id="dpCritical" class="display-6 fw-bold">-</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= ACTIVE SESSION TREND ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Aktif Oturum Trend</h5>
+        <canvas id="sessionsChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- ================= CPU / RAM CHARTS ================= -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">CPU Kullanımı</h5>
+                <canvas id="cpuChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">RAM Kullanımı</h5>
+                <canvas id="ramChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= DP SERVERS ================= -->
+<h4 class="mt-5">🖥️ DP Sunucular</h4>
+<div class="card shadow-sm mb-5">
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Sunucu</th>
+                    <th>Durum</th>
+                    <th>CPU (%)</th>
+                    <th>RAM (%)</th>
+                </tr>
+            </thead>
+            <tbody id="dpServerTableBody">
+                <tr>
+                    <td colspan="4" class="text-muted text-center">Yükleniyor...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= ALARMS ================= -->
+<h4 class="mt-5">⚠️ Son Alarmlar</h4>
+<div class="card shadow-sm mb-5">
+    <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Sunucu</th>
+                    <th>Mesaj</th>
+                    <th>Zaman</th>
+                </tr>
+            </thead>
+            <tbody id="alarmTableBody">
+                <tr>
+                    <td colspan="3" class="text-muted text-center">Yükleniyor...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+
+    <script>
+        let sessionsChart, cpuChart, ramChart;
+
+        // ================= CHART INIT =================
+        function initCharts() {
+
+            sessionsChart = new Chart(document.getElementById('sessionsChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Aktif Oturum', data: [], tension: 0.3 }] },
+                options: { animation: false }
+            });
+
+            cpuChart = new Chart(document.getElementById('cpuChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'CPU (%)', data: [], borderColor: '#0d6efd', tension: 0.3 }] },
+                options: { scales: { y: { min: 0, max: 100 } } }
+            });
+
+            ramChart = new Chart(document.getElementById('ramChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'RAM (%)', data: [], borderColor: '#dc3545', tension: 0.3 }] },
+                options: { scales: { y: { min: 0, max: 100 } } }
+            });
+        }
+
+        // ================= RENDER =================
+        function renderDashboard(data) {
+
+            // ---- ADMIN ----
+            if (data.statistics) {
+                document.getElementById('adminStats').classList.remove('d-none');
+                document.getElementById('totalUsers').innerText = data.statistics.totalUsers;
+                document.getElementById('activeSessions').innerText = data.statistics.activeSessions;
+                document.getElementById('systemHealth').innerText = data.statistics.systemHealth;
+
+                const now = new Date().toLocaleTimeString();
+                sessionsChart.data.labels.push(now);
+                sessionsChart.data.datasets[0].data.push(data.statistics.activeSessions);
+
+                if (sessionsChart.data.labels.length > 10) {
+                    sessionsChart.data.labels.shift();
+                    sessionsChart.data.datasets[0].data.shift();
+                }
+                sessionsChart.update();
+            }
+            // ---- LOCAL ADMIN ----
+            else {
+                document.getElementById('localAdminStats').classList.remove('d-none');
+
+                const dps = data.dpServers || [];
+                document.getElementById('dpCount').innerText = dps.length;
+
+                if (dps.length > 0) {
+                    const avgCpu = dps.reduce((s, x) => s + x.cpu, 0) / dps.length;
+                    const avgRam = dps.reduce((s, x) => s + x.ram, 0) / dps.length;
+                    const critical = dps.filter(x => x.status !== 'Healthy').length;
+
+                    document.getElementById('dpAvgCpu').innerText = avgCpu.toFixed(1) + ' %';
+                    document.getElementById('dpAvgRam').innerText = avgRam.toFixed(1) + ' %';
+                    document.getElementById('dpCritical').innerText = critical;
+                }
+            }
+
+            // ---- CPU / RAM ----
+            cpuChart.data.labels = data.metrics.cpu.map(x => x.time);
+            cpuChart.data.datasets[0].data = data.metrics.cpu.map(x => x.value);
+            cpuChart.update();
+
+            ramChart.data.labels = data.metrics.ram.map(x => x.time);
+            ramChart.data.datasets[0].data = data.metrics.ram.map(x => x.value);
+            ramChart.update();
+
+            // ---- DP TABLE ----
+            const dpTbody = document.getElementById('dpServerTableBody');
+            dpTbody.innerHTML = '';
+
+            if (!data.dpServers || data.dpServers.length === 0) {
+                dpTbody.innerHTML = `<tr><td colspan="4" class="text-muted text-center">DP bulunamadı</td></tr>`;
+            } else {
+                data.dpServers.forEach(dp => {
+                    let badge =
+                        dp.status === 'Healthy' ? 'bg-success' :
+                        dp.status === 'Warning' ? 'bg-warning text-dark' :
+                        'bg-danger';
+
+                    dpTbody.innerHTML += `
+                        <tr>
+                            <td>${dp.serverName}</td>
+                            <td><span class="badge ${badge}">${dp.status}</span></td>
+                            <td>${dp.cpu.toFixed(1)}%</td>
+                            <td>${dp.ram.toFixed(1)}%</td>
+                        </tr>`;
+                });
+            }
+
+            // ---- ALARMS ----
+            const alarmBody = document.getElementById('alarmTableBody');
+            alarmBody.innerHTML = '';
+
+            if (data.alarms.length === 0) {
+                alarmBody.innerHTML = `<tr><td colspan="3" class="text-muted text-center">Alarm yok</td></tr>`;
+            } else {
+                data.alarms.forEach(a => {
+                    alarmBody.innerHTML += `
+                        <tr>
+                            <td>${a.server}</td>
+                            <td>${a.message}</td>
+                            <td>${a.time}</td>
+                        </tr>`;
+                });
+            }
+        }
+
+        // ================= FETCH =================
+        async function refreshDashboard() {
+            try {
+                const res = await fetch('/api/dashboard');
+                if (!res.ok) return;
+                const data = await res.json();
+                renderDashboard(data);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // ================= START =================
+        initCharts();
+        refreshDashboard();
+        setInterval(refreshDashboard, 30000);
+    </script>
+
+}

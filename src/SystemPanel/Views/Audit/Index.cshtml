@@ -1,0 +1,70 @@
+@model SystemPanel.Controllers.AuditFilter
+@{
+    ViewData["Title"] = "Güvenlik Denetimi";
+}
+
+<h2 class="fw-bold mt-2 mb-2">Güvenlik Denetimi (Audit)</h2>
+<p class="text-muted">Kim, ne zaman, hangi kaynakta ne yaptı. Zamanlar UTC'dir. Parola ve LAPS değerleri hiçbir zaman kaydedilmez.</p>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-2"><input name="Action" value="@Model.Action" class="form-control" placeholder="İşlem (ör. ad.user)" /></div>
+            <div class="col-md-2"><input name="Actor" value="@Model.Actor" class="form-control" placeholder="Kullanıcı" /></div>
+            <div class="col-md-2"><input name="Resource" value="@Model.Resource" class="form-control" placeholder="Kaynak (DN, ad...)" /></div>
+            <div class="col-md-2"><input name="CorrelationId" value="@Model.CorrelationId" class="form-control" placeholder="Correlation ID" /></div>
+            <div class="col-md-1">
+                <select name="Success" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="true" selected="@(Model.Success == true)">Başarılı</option>
+                    <option value="false" selected="@(Model.Success == false)">Başarısız</option>
+                </select>
+            </div>
+            <div class="col-md-1"><input type="date" name="FromUtc" value="@Model.FromUtc?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-1"><input type="date" name="ToUtc" value="@Model.ToUtc?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-1"><button class="btn btn-primary w-100">Filtrele</button></div>
+        </form>
+    </div>
+</div>
+
+<p class="small text-muted">@Model.Total kayıt</p>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>Zaman (UTC)</th><th>Kullanıcı</th><th>IP</th><th>İşlem</th><th>Kaynak</th><th>Sonuç</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model.Items)
+            {
+                <tr class="@(e.Success ? "" : "table-danger")">
+                    <td class="text-nowrap">@e.TimestampUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@e.ActorUserName <span class="badge bg-light text-dark">@e.ActorType</span></td>
+                    <td>@e.SourceIp</td>
+                    <td><code>@e.Action</code></td>
+                    <td class="text-break small">@e.ResourceType @(e.ResourceName ?? e.ResourceId)</td>
+                    <td>@(e.Success ? "OK" : (e.ErrorMessage ?? "HATA"))</td>
+                    <td><a asp-action="Details" asp-route-id="@e.Id">Detay</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.PageCount > 1)
+{
+    <nav>
+        <ul class="pagination pagination-sm">
+            @for (int i = Math.Max(1, Model.Page - 5); i <= Math.Min(Model.PageCount, Model.Page + 5); i++)
+            {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-Action="@Model.Action" asp-route-Actor="@Model.Actor" asp-route-Resource="@Model.Resource"
+                       asp-route-CorrelationId="@Model.CorrelationId" asp-route-Success="@Model.Success"
+                       asp-route-FromUtc="@Model.FromUtc?.ToString("yyyy-MM-dd")" asp-route-ToUtc="@Model.ToUtc?.ToString("yyyy-MM-dd")"
+                       asp-route-Page="@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

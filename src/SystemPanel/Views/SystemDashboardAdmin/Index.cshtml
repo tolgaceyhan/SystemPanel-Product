@@ -1,0 +1,43 @@
+@model List<SystemPanel.Models.SystemDashboardLink>
+
+<h3>Sistem Dashboard Panelleri</h3>
+
+<a class="btn btn-primary mb-3" asp-action="Create">
+    Yeni Panel Ekle
+</a>
+
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>Baslik</th>
+            <th>Screen</th>
+            <th>Pozisyon</th>
+            <th>Zoom</th>
+            <th>Refresh</th>
+            <th>Durum</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Title</td>
+                <td>@p.Screen</td>
+                <td>@p.Position</td>
+                <td>@(p.ZoomFactor?.ToString() ?? "1.0")</td>
+                <td>@(p.RefreshIntervalSec?.ToString() ?? "-")</td>
+                <td>@(p.IsActive ? "Aktif" : "Pasif")</td>
+                <td style="width:160px">
+                    <a asp-action="Edit" asp-route-id="@p.Id"
+                       class="btn btn-sm btn-warning">Düzenle</a>
+
+                    <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
+                          onsubmit="return confirm('Silmek istiyor musun?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

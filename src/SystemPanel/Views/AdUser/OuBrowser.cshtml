@@ -1,0 +1,198 @@
+@{
+    ViewData["Title"] = "OU Tarayıcı";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <h3><i class="fas fa-sitemap me-2"></i> OU Tarayıcı</h3>
+    <hr />
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input id="ouSearch" class="form-control" placeholder="OU içinde ara (adına göre filtreler)..." />
+                <button id="btnOuSearchClear" class="btn btn-outline-secondary" type="button">
+                    Temizle
+                </button>
+            </div>
+            <small class="text-muted">
+                Arama sadece ekranda görünen OU isimlerinde basit metin filtresi uygular.
+            </small>
+        </div>
+    </div>
+
+    <div class="mb-2">
+        <strong>Seçili OU:</strong>
+        <code id="selectedOuLabel" class="ms-1 text-muted">Henüz seçilmedi</code>
+    </div>
+
+    <div id="ouTreePanel" class="border rounded p-3" style="max-height: 600px; overflow:auto;">
+        <div id="ouTreeLoading" class="text-muted">
+            <i class="fas fa-spinner fa-spin me-1"></i> OU ağacı yükleniyor...
+        </div>
+        <div id="ouTreeError" class="text-danger d-none">
+            OU ağacı yüklenirken hata oluştu.
+        </div>
+        <ul id="ouTreeRoot" class="list-unstyled mb-0"></ul>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let ouTreeData = null;
+        let currentSelectedDn = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            loadOuTree();
+            setupSearch();
+        });
+
+        // ======================= OU TREE LOAD =============================
+        async function loadOuTree() {
+            const loading = document.getElementById("ouTreeLoading");
+            const errorDiv = document.getElementById("ouTreeError");
+            const rootUl = document.getElementById("ouTreeRoot");
+
+            loading.classList.remove("d-none");
+            errorDiv.classList.add("d-none");
+            rootUl.innerHTML = "";
+
+            try {
+                const resp = await fetch("/ad-users/ou-tree");
+                if (!resp.ok) {
+                    throw new Error("HTTP " + resp.status);
+                }
+
+                const data = await resp.json();
+                ouTreeData = data;
+
+                loading.classList.add("d-none");
+                renderOuTree(rootUl, ouTreeData);
+            } catch (e) {
+                console.error("OU tree load error:", e);
+                loading.classList.add("d-none");
+                errorDiv.classList.remove("d-none");
+            }
+        }
+
+        // ======================= TREE RENDER ==============================
+        function renderOuTree(rootUl, data) {
+            rootUl.innerHTML = "";
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                rootUl.innerHTML = `<li class="text-muted">OU bulunamadı.</li>`;
+                return;
+            }
+
+            data.forEach(node => {
+                const li = createOuNodeElement(node);
+                rootUl.appendChild(li);
+            });
+        }
+
+        function createOuNodeElement(node) {
+            const li = document.createElement("li");
+            li.classList.add("mb-1");
+
+            const hasChildren = node.children && node.children.length > 0;
+
+            const rowDiv = document.createElement("div");
+            rowDiv.classList.add("d-flex", "align-items-center");
+
+            // caret
+            const caret = document.createElement("span");
+            caret.classList.add("me-1");
+            if (hasChildren) {
+                caret.innerHTML = '<i class="fas fa-caret-right"></i>';
+                caret.style.cursor = "pointer";
+            } else {
+                caret.innerHTML = '<i class="fas fa-circle fa-xs text-muted"></i>';
+            }
+
+            // clickable label
+            const label = document.createElement("span");
+            label.textContent = node.name || "(OU)";
+            label.classList.add("ou-node-label");
+            label.style.cursor = "pointer";
+
+            label.addEventListener("click", function () {
+                selectOu(node);
+            });
+
+            rowDiv.appendChild(caret);
+            rowDiv.appendChild(label);
+            li.appendChild(rowDiv);
+
+            // children container
+            if (hasChildren) {
+                const childUl = document.createElement("ul");
+                childUl.classList.add("list-unstyled", "ms-4");
+                childUl.style.display = "none";
+
+                node.children.forEach(child => {
+                    const childLi = createOuNodeElement(child);
+                    childUl.appendChild(childLi);
+                });
+
+                li.appendChild(childUl);
+
+                caret.addEventListener("click", function () {
+                    const icon = caret.querySelector("i");
+                    if (childUl.style.display === "none") {
+                        childUl.style.display = "block";
+                        icon.classList.remove("fa-caret-right");
+                        icon.classList.add("fa-caret-down");
+                    } else {
+                        childUl.style.display = "none";
+                        icon.classList.remove("fa-caret-down");
+                        icon.classList.add("fa-caret-right");
+                    }
+                });
+            }
+
+            return li;
+        }
+
+        function selectOu(node) {
+            currentSelectedDn = node.distinguishedName;
+            const label = document.getElementById("selectedOuLabel");
+            label.textContent = node.distinguishedName || "(DN yok)";
+            label.classList.remove("text-muted");
+            label.classList.add("text-success");
+        }
+
+        // ======================= SIMPLE SEARCH / FILTER ===================
+        function setupSearch() {
+            const input = document.getElementById("ouSearch");
+            const clearBtn = document.getElementById("btnOuSearchClear");
+
+            input.addEventListener("input", function () {
+                applyOuFilter(input.value);
+            });
+
+            clearBtn.addEventListener("click", function () {
+                input.value = "";
+                applyOuFilter("");
+            });
+        }
+
+        function applyOuFilter(text) {
+            const filter = (text || "").toLowerCase();
+
+            const labels = document.querySelectorAll("#ouTreeRoot .ou-node-label");
+            labels.forEach(lbl => {
+                const li = lbl.closest("li");
+                if (!li) return;
+
+                const name = lbl.textContent.toLowerCase();
+                if (!filter || name.includes(filter)) {
+                    li.style.display = "";
+                } else {
+                    li.style.display = "none";
+                }
+            });
+        }
+    </script>
+}

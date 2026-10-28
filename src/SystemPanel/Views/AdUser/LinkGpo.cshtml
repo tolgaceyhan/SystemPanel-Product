@@ -1,0 +1,33 @@
+﻿@model SystemPanel.ViewModels.AdUser.OuDetailViewModel
+@{
+    ViewData["Title"] = "GPO Bağlama";
+}
+<h3 class="mb-3">🧩 GPO Bağlama — <code>@Model.OuPath</code></h3>
+
+@if (Model.LinkedGpos != null && Model.LinkedGpos.Any())
+{
+    <ul class="list-group mb-3">
+        @foreach (var g in Model.LinkedGpos)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@g</span>
+                <button class="btn btn-sm btn-outline-danger" disabled>Bağlantıyı Kaldır (yakında)</button>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <div class="alert alert-light">Bu OU için kayıtlı GPO bağlantısı görülmedi.</div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <div class="mb-2">Yeni GPO bağla (yakında)</div>
+        <div class="input-group">
+            <input class="form-control" placeholder="GPO adı veya GUID" disabled />
+            <button class="btn btn-primary" disabled>Bağla</button>
+        </div>
+        <div class="form-text">Not: GPO yönetimi için ayrı yetkiler gerekir. Bu ekran şimdilik salt okunur.</div>
+    </div>
+</div>

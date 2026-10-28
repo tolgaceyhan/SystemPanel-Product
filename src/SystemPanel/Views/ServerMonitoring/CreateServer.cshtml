@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Sunucu Yönetimi";
+    var serverList = ViewBag.ServerNames as List<string> ?? new List<string>();
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+<h2 class="mb-4">🖥️ Sunucu Ekle / Kaldır</h2>
+
+<div class="row">
+    <!-- Sunucu Ekleme -->
+    <div class="col-md-6">
+        <div class="card shadow-sm p-4">
+            <h5 class="mb-3">➕ Yeni Sunucu Ekle</h5>
+            <form asp-action="AddServer" method="post">
+                <div class="mb-3">
+                    <label for="serverName" class="form-label">Sunucu Seç (AD'den)</label>
+                    <select name="serverName" class="form-select" required>
+                        <option disabled selected value="">-- Sunucu Seçin --</option>
+                        @foreach (var name in serverList)
+                        {
+                            <option value="@name">@name</option>
+                        }
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Ekle</button>
+                <button type="button" class="btn btn-outline-warning ms-2" onclick="testAdConnection()">🔌 Domain Bağlantısını Test Et</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mevcut Sunucular -->
+    <div class="col-md-6">
+        <div class="card shadow-sm p-4">
+            <h5 class="mb-3">🔍 Mevcut Kayıtlı Sunucular</h5>
+            <ul class="list-group">
+                @foreach (var name in serverList)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @name
+                        <form asp-action="RemoveServer" method="post" class="ms-2">
+                            <input type="hidden" name="serverName" value="@name" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Sil</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        function testAdConnection() {
+            fetch("/ServerMonitoring/TestAdConnection", { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastr.success(data.message);
+                    } else {
+                        toastr.error(data.message);
+                    }
+                })
+                .catch(() => toastr.error("Bağlantı sırasında hata oluştu."));
+        }
+    </script>
+}

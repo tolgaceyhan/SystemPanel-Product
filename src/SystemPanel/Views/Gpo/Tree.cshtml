@@ -1,0 +1,92 @@
+@model SystemPanel.ViewModels.Gpo.GpoOuTreeViewModel
+
+@{
+    ViewData["Title"] = "GPO Tree";
+}
+
+<h2 class="mb-4">🌳 GPO – OU Tree</h2>
+
+<!-- 🔍 Arama Kutusu -->
+<div class="mb-3">
+    <input id="treeSearch" type="text" class="form-control" placeholder="🔍 OU veya GPO adı ara... (örn: İstanbul, USB Disable)">
+</div>
+
+<!-- Tree Container -->
+<div id="gpoTreeContainer">
+    @Html.Partial("TreeNode", Model)
+</div>
+
+@section Scripts {
+
+    <script>
+        const searchInput = document.getElementById("treeSearch");
+
+        searchInput.addEventListener("keyup", function () {
+            const term = this.value.trim().toLowerCase();
+            filterTree(term);
+        });
+
+        function filterTree(term) {
+            const nodes = document.querySelectorAll(".tree-node");
+
+            nodes.forEach(node => {
+                const text = node.getAttribute("data-name");
+                const gpos = node.getAttribute("data-gpos");
+
+                const match =
+                    (text && text.toLowerCase().includes(term)) ||
+                    (gpos && gpos.toLowerCase().includes(term));
+
+                if (term.length === 0) {
+                    // Arama boşsa herkes görünür
+                    node.style.display = "";
+                }
+                else if (match) {
+                    node.style.display = "";
+                    expandParents(node);
+                }
+                else {
+                    node.style.display = "none";
+                }
+            });
+        }
+
+        // 🔼 Arama eşleştiğinde tüm parent OU’ları genişlet
+        function expandParents(node) {
+            let parent = node.parentElement.closest(".tree-node");
+            while (parent) {
+                const icon = parent.querySelector(".toggle-icon");
+                const children = parent.querySelector(".children");
+
+                if (icon && children) {
+                    icon.classList.remove("fa-folder");
+                    icon.classList.add("fa-folder-open");
+                    children.style.display = "block";
+                }
+
+                parent = parent.parentElement.closest(".tree-node");
+            }
+        }
+    </script>
+
+    <style>
+        .tree-node {
+            margin-left: 18px;
+            padding-left: 6px;
+            border-left: 1px dashed #ccc;
+        }
+
+        .toggle-icon {
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .ou-label {
+            font-weight: 600;
+        }
+
+        .gpo-list {
+            margin-left: 28px;
+        }
+    </style>
+}

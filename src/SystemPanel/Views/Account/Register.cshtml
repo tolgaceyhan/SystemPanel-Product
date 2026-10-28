@@ -1,0 +1,35 @@
+﻿@model SystemPanel.ViewModels.Account.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Kayıt Ol";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="Register" method="post">
+    <div class="mb-3">
+        <label for="Username" class="form-label">Kullanıcı Adı</label>
+        <input asp-for="Username" class="form-control" id="Username" />
+        <span asp-validation-for="Username" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="Email" class="form-label">E-posta</label>
+        <input asp-for="Email" class="form-control" id="Email" type="email" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="Password" class="form-label">Şifre</label>
+        <input asp-for="Password" class="form-control" id="Password" type="password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="ConfirmPassword" class="form-label">Şifre Tekrar</label>
+        <input asp-for="ConfirmPassword" class="form-control" id="ConfirmPassword" type="password" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Kayıt Ol</button>
+</form>

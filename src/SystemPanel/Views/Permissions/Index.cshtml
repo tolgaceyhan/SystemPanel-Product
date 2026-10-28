@@ -1,0 +1,54 @@
+@model SystemPanel.ViewModels.RolePermissionMatrixViewModel
+@using SystemPanel.Security
+@inject IPermissionService PermissionService
+@{
+    ViewData["Title"] = "Rol ve İzinler";
+    var canEdit = await PermissionService.HasPermissionAsync(User, Permissions.SettingsManage);
+}
+
+<h2 class="fw-bold mt-2 mb-2">Rol ve İzinler</h2>
+<p class="text-muted">
+    Yetkilendirme izinlerle yapılır; roller izinlere bu tabloyla eşlenir. AD grupları rollere
+    <code>RoleMapping</code> yapılandırmasıyla eşlenir. <code>scope.all</code> izni olmayan roller yalnızca
+    kendi il/birim kapsamlarında işlem yapabilir. Ayrıntı: docs/AUTHORIZATION.md
+</p>
+<partial name="_StatusMessages" />
+
+<form method="post" asp-action="Index">
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered table-hover align-middle">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th>İzin</th>
+                    @foreach (var role in Model.Roles)
+                    {
+                        <th class="text-center">@role</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var permission in Model.Permissions)
+                {
+                    <tr>
+                        <td>
+                            <code>@permission</code>
+                            <div class="small text-muted">@(Permissions.Descriptions.TryGetValue(permission, out var d) ? d : "")</div>
+                        </td>
+                        @foreach (var role in Model.Roles)
+                        {
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" name="granted" value="@role|@permission"
+                                       checked="@Model.IsGranted(role, permission)" disabled="@(!canEdit)" />
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (canEdit)
+    {
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Rol-izin eşlemesi kaydedilsin mi?');">Kaydet</button>
+    }
+</form>

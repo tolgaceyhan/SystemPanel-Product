@@ -1,0 +1,49 @@
+@model SystemPanel.ViewModels.Logs.ClearLogsViewModel
+
+@{
+    ViewData["Title"] = "Log Temizleme";
+}
+
+<h2 class="fw-bold mt-2 mb-4">Log Temizleme</h2>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card shadow-sm border-danger">
+    <div class="card-body">
+        <p class="text-danger fw-bold">Bu işlem geri alınamaz. Silinen log kayıtları kurtarılamaz.</p>
+
+        <form method="post" asp-action="ClearLogs" class="row g-3">
+            @Html.AntiForgeryToken()
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Log türü</label>
+                <select asp-for="LogType" class="form-select">
+                    <option value="All">Tümü</option>
+                    <option value="Info">Info</option>
+                    <option value="Warning">Warning</option>
+                    <option value="Error">Error</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Bu tarihten önceki</label>
+                <input asp-for="BeforeDate" type="date" class="form-control" />
+            </div>
+
+            <div class="col-12">
+                <div class="form-check">
+                    <input asp-for="Confirm" class="form-check-input" />
+                    <label asp-for="Confirm" class="form-check-label">Seçili logların kalıcı olarak silineceğini onaylıyorum.</label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-danger">Sil</button>
+                <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
+            </div>
+        </form>
+    </div>
+</div>

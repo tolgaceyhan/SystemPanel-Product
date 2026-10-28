@@ -1,0 +1,46 @@
+﻿@model SystemPanel.ViewModels.UserManagement.UserListViewModel
+
+<table class="table table-bordered table-hover table-sm">
+    <thead class="table-dark">
+        <tr>
+            <th onclick="sortBy('UserName')" style="cursor:pointer">Kullanıcı Adı</th>
+            <th onclick="sortBy('Email')" style="cursor:pointer">E-Posta</th>
+            <th onclick="sortBy('PhoneNumber')" style="cursor:pointer">Telefon</th>
+            <th>Roller</th>
+            <th onclick="sortBy('Status')" style="cursor:pointer">Durum</th>
+            <th style="width: 180px;">İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model.Users)
+        {
+            <tr>
+                <td>@u.UserName</td>
+                <td>@u.Email</td>
+                <td>@u.PhoneNumber</td>
+                <td>@u.Roles</td>
+                <td>
+                    @if (u.IsLocked)
+                    {
+                        <span class="badge bg-warning text-dark">Kilitli</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Aktif</span>
+                    }
+                </td>
+                <td class="text-end">
+                    <a href="/UserManagement/UserDetails/@u.Id" class="btn btn-sm btn-info">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="/UserManagement/EditUser/@u.Id" class="btn btn-sm btn-warning">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="/UserManagement/DeleteUser/@u.Id" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

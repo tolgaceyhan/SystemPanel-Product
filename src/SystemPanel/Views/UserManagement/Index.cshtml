@@ -1,0 +1,108 @@
+@using SystemPanel.ViewModels.UserManagement
+@model UserListViewModel
+
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+}
+
+<h3 class="mb-3">Kullanıcı Yönetimi</h3>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="mb-3 d-flex justify-content-between">
+    <form method="get" class="d-flex">
+        <input type="text" name="search" value="@Model.Search" class="form-control me-2" placeholder="Kullanıcı / e-posta ara..." />
+        <button class="btn btn-outline-primary">Ara</button>
+    </form>
+
+    <a class="btn btn-success" href="@Url.Action("Create","UserManagement")">
+        <i class="fas fa-user-plus me-1"></i> Yeni Kullanıcı
+    </a>
+</div>
+
+<table class="table table-striped table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Kullanıcı Adı</th>
+            <th>E-posta</th>
+            <th>Telefon</th>
+            <th>Roller</th>
+            <th>Durum</th>
+            <th style="width: 150px;">İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Users == null || !Model.Users.Any())
+        {
+            <tr>
+                <td colspan="6" class="text-center text-muted">Kayıt bulunamadı.</td>
+            </tr>
+        }
+        else
+        {
+            foreach (var u in Model.Users)
+            {
+                <tr>
+                    <td>@u.UserName</td>
+                    <td>@u.Email</td>
+                    <td>@u.PhoneNumber</td>
+                    <td>
+                        @if (u.Roles != null && u.Roles.Any())
+                        {
+                            @string.Join(", ", u.Roles)
+                        }
+                        else
+                        {
+                            <span class="text-muted small">Rol yok</span>
+                        }
+                    </td>
+                    <td>
+                        @if (u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow)
+                        {
+                            <span class="badge bg-danger">Kilitli</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Aktif</span>
+                        }
+                    </td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-info"
+                           href="@Url.Action("Details","UserManagement", new { id = u.Id })">
+                            Detay
+                        </a>
+                        <a class="btn btn-sm btn-outline-primary"
+                           href="@Url.Action("Edit","UserManagement", new { id = u.Id })">
+                            Düzenle
+                        </a>
+                        <a class="btn btn-sm btn-outline-danger"
+                           href="@Url.Action("Delete","UserManagement", new { id = u.Id })">
+                            Sil
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i, search = Model.Search })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

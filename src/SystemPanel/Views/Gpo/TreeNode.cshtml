@@ -1,0 +1,26 @@
+@using SystemPanel.ViewModels.Gpo
+@model GpoOuTreeViewModel
+
+<li>
+    <span class="ou-node" onclick="selectOu('@Model.DistinguishedName')">@Model.OuName</span>
+
+    @if (Model.LinkedGpos.Any())
+    {
+        <ul>
+            @foreach (var g in Model.LinkedGpos)
+            {
+                <li>📌 @g</li>
+            }
+        </ul>
+    }
+
+    @if (Model.ChildOus.Any())
+    {
+        <ul>
+            @foreach (var child in Model.ChildOus)
+            {
+                @Html.Partial("TreeNode", child)
+            }
+        </ul>
+    }
+</li>

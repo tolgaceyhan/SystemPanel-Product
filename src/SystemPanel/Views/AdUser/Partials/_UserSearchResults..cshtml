@@ -1,0 +1,38 @@
+@model IEnumerable<SystemPanel.Models.AdUser>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">Sonuç bulunamadı.</div>
+    return;
+}
+
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <th>Kullanıcı</th>
+            <th>Ad</th>
+            <th>Email</th>
+            <th>Durum</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.UserName</td>
+                <td>@u.DisplayName</td>
+                <td>@u.Email</td>
+                <td>
+                    @if (u.Enabled)
+                    {
+                        <span class="badge bg-success">Aktif</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Pasif</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,26 @@
+@model IEnumerable<(string Time, string Level, string Message)>
+@{
+    ViewData["Title"] = "Uygulama Logları";
+}
+<h3 class="mb-3">🧾 Uygulama Logları</h3>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-light">Kayıt yok.</div>
+}
+else
+{
+    <table class="table table-sm table-striped">
+        <thead><tr><th>Zaman</th><th>Seviye</th><th>Mesaj</th></tr></thead>
+        <tbody>
+            @foreach (var x in Model)
+            {
+                <tr>
+                    <td class="text-nowrap">@x.Time</td>
+                    <td>@x.Level</td>
+                    <td>@x.Message</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

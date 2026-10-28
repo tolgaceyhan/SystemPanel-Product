@@ -1,0 +1,41 @@
+@model IEnumerable<SystemPanel.Models.OrganizationalUnit>
+@{
+    ViewData["Title"] = "OU Arama";
+    var term = ViewBag.Term as string ?? "";
+}
+<h3 class="mb-3">📁 OU Arama</h3>
+
+<form method="get" asp-action="OuSearch" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input class="form-control" name="name" value="@term" placeholder="OU adı..." />
+    </div>
+    <div class="col-md-6">
+        <button class="btn btn-primary">Ara</button>
+        <a class="btn btn-secondary ms-2" href="@Url.Action("OuSearch","AdUser")">Temizle</a>
+    </div>
+</form>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-light">Sonuç yok.</div>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var ou in Model)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-bold">@ou.Name</div>
+                    <div class="small text-muted"><code>@ou.DistinguishedName</code></div>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <a class="btn btn-outline-primary"
+                       href="@Url.Action("OuDetails","AdUser", new { distinguishedName = ou.DistinguishedName })">Detay</a>
+                    <a class="btn btn-primary"
+                       href="@Url.Action("Index","AdUser")">Ağaçta Aç</a>
+                </div>
+            </li>
+        }
+    </ul>
+}

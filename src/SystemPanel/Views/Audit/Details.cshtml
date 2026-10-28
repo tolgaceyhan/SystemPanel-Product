@@ -1,0 +1,28 @@
+@model SystemPanel.Models.AuditEvent
+@{
+    ViewData["Title"] = "Audit Kaydı";
+}
+
+<h2 class="fw-bold mt-2 mb-4">Audit Kaydı #@Model.Id</h2>
+
+<dl class="row">
+    <dt class="col-sm-2">Zaman (UTC)</dt><dd class="col-sm-10">@Model.TimestampUtc.ToString("yyyy-MM-dd HH:mm:ss.fff")</dd>
+    <dt class="col-sm-2">Kullanıcı</dt><dd class="col-sm-10">@Model.ActorUserName (@Model.ActorType) <span class="text-muted">@Model.ActorUserId</span></dd>
+    <dt class="col-sm-2">Kaynak IP</dt><dd class="col-sm-10">@Model.SourceIp</dd>
+    <dt class="col-sm-2">İşlem</dt><dd class="col-sm-10"><code>@Model.Action</code></dd>
+    <dt class="col-sm-2">Kaynak</dt><dd class="col-sm-10">@Model.ResourceType / @Model.ResourceName <div class="small text-break">@Model.ResourceId</div></dd>
+    <dt class="col-sm-2">Kapsam</dt><dd class="col-sm-10 text-break">@Model.Scope</dd>
+    <dt class="col-sm-2">Sonuç</dt><dd class="col-sm-10">@(Model.Success ? "Başarılı" : "Başarısız") @Model.ErrorCode @Model.ErrorMessage</dd>
+    <dt class="col-sm-2">Correlation ID</dt><dd class="col-sm-10"><code>@Model.CorrelationId</code></dd>
+</dl>
+
+@foreach (var (title, json) in new[] { ("Önce", Model.BeforeJson), ("Sonra", Model.AfterJson), ("Ek bilgi", Model.MetadataJson) })
+{
+    if (!string.IsNullOrWhiteSpace(json))
+    {
+        <h5>@title</h5>
+        <pre class="bg-light p-2 border rounded text-wrap">@json</pre>
+    }
+}
+
+<a asp-action="Index" class="btn btn-secondary">Geri</a>

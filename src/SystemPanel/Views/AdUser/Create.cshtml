@@ -1,0 +1,61 @@
+@model SystemPanel.ViewModels.AdUser.CreateAdUserViewModel
+
+@{
+    ViewData["Title"] = "Kullanıcı Oluştur";
+
+    bool isAdmin = true; // Bu sayfa yalnızca ad.users.create iznine sahip kullanıcılara açılır.
+    string rootOu = User.Claims.FirstOrDefault(c => c.Type == "ou:root")?.Value ?? "";
+}
+
+<div class="container mt-3">
+    <h3><i class="fas fa-user-plus me-2"></i> Yeni Active Directory Kullanıcısı</h3>
+    <hr />
+
+    <form method="post">
+
+        <div class="mb-3">
+            <label class="form-label">Kullanıcı Adı (sAMAccountName)</label>
+            <input asp-for="UserName" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">İsim Soyisim</label>
+            <input asp-for="DisplayName" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">E-posta</label>
+            <input asp-for="Email" class="form-control" />
+        </div>
+
+        <!-- OU seçimi -->
+        @if (isAdmin)
+        {
+            <div class="mb-3">
+                <label class="form-label">Organizational Unit (Kayıt Yeri)</label>
+                <select asp-for="SelectedOu"
+                        asp-items="Model.AvailableOus"
+                        class="form-select"></select>
+            </div>
+        }
+        else
+        {
+            <!-- LocalAdmin -->
+            <input type="hidden" asp-for="SelectedOu" value="@rootOu" />
+            <div class="alert alert-info">
+                Kullanıcı <b>@rootOu</b> altında oluşturulacaktır.
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label">Parola</label>
+            <input asp-for="Password" type="password" class="form-control" />
+        </div>
+
+        <button class="btn btn-primary">
+            <i class="fas fa-save me-1"></i> Oluştur
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary ms-2">Geri</a>
+    </form>
+</div>

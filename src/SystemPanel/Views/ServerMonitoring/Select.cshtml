@@ -1,0 +1,34 @@
+
+@model SystemPanel.ViewModels.ServerSelectionViewModel
+
+<h2 class="mb-4">🖥️ Sunucu İzleme Seçimi</h2>
+
+<form asp-action="Select" method="post" class="border rounded p-4 shadow-sm" style="max-width: 600px;">
+    <div class="mb-3">
+        <label class="form-label">Sunucu Kaynağını Seçin:</label>
+        <select asp-for="SelectionMode" class="form-select">
+            <option value="All">Tüm Domain Sunucuları</option>
+            <option value="Ou">Belirli OU Altındaki Sunucular</option>
+        </select>
+    </div>
+
+    <div class="mb-3" id="ouInput">
+        <label asp-for="OuPath" class="form-label">OU LDAP Yolu (örn: OU=Sunucular,DC=domain,DC=local)</label>
+        <input asp-for="OuPath" class="form-control" />
+        <span asp-validation-for="OuPath" class="text-danger small"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">✔️ Sunucuları Getir</button>
+</form>
+
+@section Scripts {
+<script>
+    const modeSelector = document.querySelector('select[name="SelectionMode"]');
+    const ouInput = document.getElementById('ouInput');
+    function toggleOuInput() {
+        ouInput.style.display = modeSelector.value === 'Ou' ? 'block' : 'none';
+    }
+    modeSelector.addEventListener('change', toggleOuInput);
+    toggleOuInput();
+</script>
+}

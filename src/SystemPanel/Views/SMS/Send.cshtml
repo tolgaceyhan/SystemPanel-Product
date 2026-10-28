@@ -1,0 +1,234 @@
+@model SystemPanel.ViewModels.SMSRequest
+@{
+    ViewData["Title"] = "SMS Gönderimi";
+}
+
+<h3 class="mb-4">SMS Gönderim Paneli</h3>
+
+@if (TempData["ok"] != null)
+{
+    <div class="alert alert-success">@TempData["ok"]</div>
+}
+@if (TempData["error"] != null)
+{
+    <div class="alert alert-danger">@TempData["error"]</div>
+}
+
+<div class="row">
+    <!-- 1) Tekil SMS -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <strong>Tekil SMS Gönder</strong>
+            </div>
+            <div class="card-body">
+                <form asp-action="Send" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label asp-for="Phone" class="form-label">Telefon Numarası</label>
+                        <input asp-for="Phone" class="form-control" placeholder="5XXXXXXXXX" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Message" class="form-label">Mesaj</label>
+                        <textarea asp-for="Message" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Message" class="text-danger"></span>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Gönder</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2) Local Adminler -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <strong>Local Adminlere SMS</strong>
+            </div>
+            <div class="card-body">
+                <form asp-action="SendToLocalAdmins" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Mesaj</label>
+                        <textarea name="message" class="form-control" rows="3"
+                                  placeholder="Local Adminlere gidecek mesajı girin"></textarea>
+                    </div>
+                    <button class="btn btn-warning" type="submit">
+                        Local Adminlere Gönder
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 3) Şube Müdürleri -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <strong>Şube Müdürlerine SMS</strong>
+            </div>
+            <div class="card-body">
+                <form asp-action="SendToSubeMudurlari" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Mesaj</label>
+                        <textarea name="message" class="form-control" rows="3"
+                                  placeholder="Şube Müdürlerine gidecek mesajı girin"></textarea>
+                    </div>
+                    <button class="btn btn-info" type="submit">
+                        Şube Müdürlerine Gönder
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4) Tüm AD Kullanıcıları -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <strong>Tüm AD Kullanıcılarına SMS</strong>
+            </div>
+            <div class="card-body">
+                <form asp-action="SendToAllAdUsers" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Mesaj</label>
+                        <textarea name="message" class="form-control" rows="3"
+                                  placeholder="Tüm AD kullanıcılarına gidecek mesajı girin"></textarea>
+                    </div>
+                    <button class="btn btn-danger" type="submit"
+                            onclick="return confirm('Gerçekten TÜM AD kullanıcılarına SMS göndermek istiyor musunuz?');">
+                        Tüm AD Kullanıcılarına Gönder
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 5) Belirli OU'ya SMS -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <strong>Belirli OU'ya SMS</strong>
+            </div>
+            <div class="card-body">
+                <form asp-action="SendToOu" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">OU DN</label>
+                        <input name="ouDn" class="form-control"
+                               placeholder="Örn: OU=Birim,OU=Kullanicilar,DC=example,DC=local" />
+                        <small class="text-muted">
+                            Tam DistinguishedName yazmanız gerekiyor.
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mesaj</label>
+                        <textarea name="message" class="form-control" rows="3"
+                                  placeholder="Bu OU altındaki kullanıcılara gidecek mesajı girin"></textarea>
+                    </div>
+                    <button class="btn btn-secondary" type="submit">
+                        Seçili OU Altına Gönder
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6) Toplu Seçim (DN listesi) -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <strong>Toplu Seçim ile SMS (DN Listesi)</strong>
+            </div>
+            <div class="card-body">
+                <form id="selectionForm">
+                    <div class="mb-3">
+                        <label class="form-label">Kullanıcı DN Listesi</label>
+                        <textarea id="dnList" class="form-control" rows="5"
+                                  placeholder="Her satıra bir kullanıcı DistinguishedName yazın..."></textarea>
+                        <small class="text-muted">
+                            Örn: CN=Kullanici,OU=Birim,OU=...,DC=example,DC=local
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mesaj</label>
+                        <textarea id="selectionMessage" class="form-control" rows="3"
+                                  placeholder="Seçili kullanıcılara gidecek mesajı girin"></textarea>
+                    </div>
+                    <button class="btn btn-success" type="submit">
+                        Seçili Kullanıcılara Gönder (AJAX)
+                    </button>
+                </form>
+
+                <div id="selectionResult" class="mt-3" style="display:none;">
+                    <div class="alert" role="alert"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Toplu Seçim formu AJAX ile SendToSelection action'ına POST atar
+        document.getElementById('selectionForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const dnText = document.getElementById('dnList').value || "";
+            const message = document.getElementById('selectionMessage').value || "";
+
+            const dns = dnText
+                .split('\n')
+                .map(x => x.trim())
+                .filter(x => x.length > 0);
+
+            if (dns.length === 0) {
+                showSelectionResult(false, "Gönderilecek kullanıcı DN listesi boş.");
+                return;
+            }
+            if (!message) {
+                showSelectionResult(false, "Mesaj alanı boş olamaz.");
+                return;
+            }
+
+            try {
+                const response = await fetch('@Url.Action("SendToSelection", "SMS")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        distinguishedNames: dns,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) {
+                    showSelectionResult(false, "İstek başarısız oldu. HTTP " + response.status);
+                    return;
+                }
+
+                const data = await response.json();
+                showSelectionResult(true, `Toplu seçim ile SMS gönderildi. (${data.count} kişi)`);
+            } catch (err) {
+                console.error(err);
+                showSelectionResult(false, "Beklenmeyen bir hata oluştu.");
+            }
+        });
+
+        function showSelectionResult(success, message) {
+            const container = document.getElementById('selectionResult');
+            const alertDiv = container.querySelector('.alert');
+            container.style.display = 'block';
+
+            alertDiv.classList.remove('alert-success', 'alert-danger');
+            alertDiv.classList.add(success ? 'alert-success' : 'alert-danger');
+            alertDiv.textContent = message;
+        }
+    </script>
+}

@@ -1,0 +1,45 @@
+@inject SystemPanel.Security.IPermissionService PermissionService
+@model SystemPanel.ViewModels.Statistics.StatisticsViewModel
+@using Microsoft.AspNetCore.Identity
+
+@{
+    // Sistem sağlık kartı yalnızca settings.view iznine sahip kullanıcılara gösterilir.
+    bool isAdmin = await PermissionService.HasPermissionAsync(User, SystemPanel.Security.Permissions.SettingsView);
+}
+
+<div class="row g-3">
+
+    <!-- HERKES GÖRÜR -->
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow-sm stat-card">
+            <div class="card-body">
+                <h6>Toplam Kullanıcı</h6>
+                <p class="display-6 fw-bold">@(Model.TotalUsers?.ToString() ?? "—")</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HERKES GÖRÜR -->
+    <div class="col-md-4">
+        <div class="card text-white bg-success shadow-sm stat-card">
+            <div class="card-body">
+                <h6>Aktif Oturum</h6>
+                <p class="display-6 fw-bold">@(Model.ActiveSessions?.ToString() ?? "—")</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SADECE ADMIN -->
+    @if (isAdmin)
+    {
+        <div class="col-md-4">
+            <div class="card text-white bg-warning shadow-sm stat-card">
+                <div class="card-body">
+                    <h6>Sistem Durumu</h6>
+                    <p class="display-6 fw-bold">@Model.SystemHealth</p>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>

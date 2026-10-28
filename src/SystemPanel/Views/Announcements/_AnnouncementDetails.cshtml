@@ -1,0 +1,9 @@
+﻿@model SystemPanel.Models.Announcements
+
+<div>
+    <h3>@Model.Turu</h3>
+    <p><strong>Birimi:</strong> @Model.Birimi</p>
+    <p><strong>Açıklama:</strong> @Model.Aciklama</p>
+    <p><strong>Detay:</strong> @Model.Detay</p>  <!-- Detay alanı eklendi -->
+    <p><strong>Tarih:</strong> @Model.KayitTarihi.ToString("dd MMM yyyy")</p>
+</div>

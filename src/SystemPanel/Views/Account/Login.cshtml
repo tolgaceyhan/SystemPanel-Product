@@ -1,0 +1,64 @@
+@model SystemPanel.ViewModels.Account.LoginViewModel
+@{
+    Layout = null; // Bu sayfa layout kullanmaz
+    var returnUrl = (ViewData["ReturnUrl"] as string) ?? Url.Action("Index", "Home");
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Giriş Yap - @Branding.Value.ProductName</title>
+    <link href="~/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+
+    <div class="text-center" style="width: 100%; max-width: 380px;">
+        <img src="@Branding.Value.LoginLogoPath" alt="@Branding.Value.ProductName" height="60" class="mb-3" />
+        <h4 class="fw-bold mb-4">Kimlik Yönetim Sistemi</h4>
+
+        <div class="card p-4 shadow-sm">
+            <form asp-controller="Account" asp-action="Login"
+                  asp-route-returnUrl="@returnUrl"
+                  method="post" novalidate>
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small" role="alert"></div>
+
+                <div class="mb-3 text-start">
+                    <label asp-for="UserName" class="form-label"></label>
+                    <input asp-for="UserName" class="form-control" autocomplete="username" />
+                    <span asp-validation-for="UserName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check mb-3 text-start">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+            </form>
+
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger mt-3 text-center">
+                    <strong>Hata:</strong> @ViewBag.ErrorMessage
+                </div>
+            }
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="~/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src=~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+@model SystemPanel.ViewModels.Logs.FilterLogsViewModel
+
+@{
+    ViewData["Title"] = "Log Yönetimi";
+}
+
+<div class="d-flex justify-content-between mt-2 mb-4">
+    <h2 class="fw-bold">Log Yönetimi</h2>
+
+    <div class="d-flex gap-2">
+        <a asp-action="ExportToCsv" class="btn btn-outline-success">CSV</a>
+        <a asp-action="ExportToPdf" class="btn btn-outline-secondary">PDF</a>
+        <a asp-action="ClearLogs" class="btn btn-outline-danger">Log Temizle</a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Mesaj içerir</label>
+                <input type="text" name="MessageContains" class="form-control" value="@Model.MessageContains" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Seviye</label>
+                <select name="Level" class="form-select">
+                    <option value="">Tümü</option>
+                    @foreach (var level in new[] { "Info", "Warning", "Error" })
+                    {
+                        <option value="@level" selected="@(Model.Level == level)">@level</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Kullanıcı</label>
+                <input type="text" name="User" class="form-control" value="@Model.User" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Başlangıç</label>
+                <input type="date" name="FromDate" class="form-control" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Bitiş</label>
+                <input type="date" name="ToDate" class="form-control" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button class="btn btn-primary w-100">Filtrele</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Zaman</th>
+                    <th>Seviye</th>
+                    <th>Mesaj</th>
+                    <th>Kullanıcı</th>
+                    <th>IP</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Logs.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">Kayıt bulunamadı.</td></tr>
+                }
+                @foreach (var log in Model.Logs)
+                {
+                    <tr>
+                        <td class="text-nowrap">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@log.Level</td>
+                        <td>@log.Message</td>
+                        <td>@log.User</td>
+                        <td>@log.IP</td>
+                        <td class="text-nowrap">
+                            <a asp-action="Details" asp-route-id="@log.Id">Detay</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

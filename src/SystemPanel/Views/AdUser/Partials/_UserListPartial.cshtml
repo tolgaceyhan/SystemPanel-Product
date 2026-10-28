@@ -1,0 +1,69 @@
+@model IEnumerable<SystemPanel.Models.AdUser>
+
+<table class="table table-bordered table-striped align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th class="truncate">Ad Soyad</th>
+            <th class="truncate">Kullanıcı Adı</th>
+            <th class="truncate w-email">E-posta</th>
+            <th style="width:220px">İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!(Model?.Any() ?? false))
+        {
+            <tr><td colspan="4" class="text-center text-muted">Sonuç bulunamadı.</td></tr>
+        }
+        else
+        {
+            foreach (var user in Model)
+            {
+                <tr>
+                    <td class="truncate" title="@user.DisplayName">@user.DisplayName</td>
+                    <td class="truncate" title="@user.UserName">@user.UserName</td>
+                    <td class="truncate w-email" title="@user.Email">@user.Email</td>
+                    <td class="text-nowrap">
+                        <!-- Şifre/Kilit -->
+                        <button type="button"
+                                class="btn btn-sm btn-warning"
+                                data-bs-toggle="modal"
+                                data-bs-target="#resetUnlockModal"
+                                data-userdn="@user.DistinguishedName"
+                                data-username="@user.DisplayName"
+                               title="Şifre Sıfırla & Kilit Aç">🔁
+                        </button>
+
+                        <!-- Detay -->
+                        <a class="btn btn-sm btn-info"
+                           href="@Url.Action("Details","AdUser", new { id = user.Id })"
+                           title="Detay">🔎 </a>
+                     
+
+                        <!-- Düzenle -->
+                        <a class="btn btn-sm btn-primary"
+                           href="@Url.Action("Edit","AdUser", new { id = user.Id })"
+                           title="Düzenle">✏️</a>
+                     
+
+                        <!-- Rol -->
+                        @* Identity tarafındaki roller için *@
+                        @if (!string.IsNullOrEmpty(user.Id))
+                        {
+                            <a class="btn btn-sm btn-dark"
+                               href="@Url.Action("AssignRole","AdUser", new { userId = user.Id })"
+                               title="Rol Ata">👤 
+                            </a>
+                        }
+
+                    
+                        <!-- Sil -->
+                        <a class="btn btn-sm btn-danger"
+                           href="@Url.Action("Delete","AdUser", new { id = user.Id })"
+                           title="Sil">
+                            🗑️</a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

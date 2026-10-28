@@ -1,0 +1,28 @@
+﻿@model SystemPanel.ViewModels.SettingsViewModel
+
+@{
+    ViewData["Title"] = "Sistem Ayarları";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="SaveSettings" method="post">
+    <div class="mb-3">
+        <label for="SiteName" class="form-label">Site Adı</label>
+        <input asp-for="SiteName" class="form-control" id="SiteName" />
+        <span asp-validation-for="SiteName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="AdminEmail" class="form-label">Admin E-posta</label>
+        <input asp-for="AdminEmail" class="form-control" id="AdminEmail" type="email" />
+        <span asp-validation-for="AdminEmail" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="EnableLogging" class="form-label">Loglama Aktif</label>
+        <input asp-for="EnableLogging" class="form-check-input" id="EnableLogging" type="checkbox" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+</form>

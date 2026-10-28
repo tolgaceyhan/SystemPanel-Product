@@ -1,0 +1,132 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using SystemPanel.Contracts.Licensing;
+
+// SystemPanel lisans aracı (yalnızca üretici kullanır).
+//
+//   splicense keygen --out <klasör>
+//   splicense issue  --key <private.pem> --customer "<Kurum>" --out <dosya.lic>
+//                    [--edition Standard] [--expires 2027-12-31] [--support 2027-12-31]
+//                    [--max-agents 100] [--features ad,laps,gpo] [--id <lisans-no>]
+//   splicense verify --public <public.pem> --license <dosya.lic>
+//
+// ÖZEL ANAHTAR: repoya eklemeyin, paylaşmayın, şifreli ve yedekli bir ortamda (tercihen HSM / çevrimdışı
+// makine) saklayın. Kaybolursa yeni lisans üretilemez; sızarsa herkes lisans üretebilir.
+
+return Run(args);
+
+static int Run(string[] args)
+{
+    if (args.Length == 0)
+        return Usage();
+
+    var options = ParseOptions(args.Skip(1).ToArray());
+    try
+    {
+        return args[0] switch
+        {
+            "keygen" => KeyGen(options),
+            "issue" => Issue(options),
+            "verify" => Verify(options),
+            _ => Usage(),
+        };
+    }
+    catch (Exception ex) when (ex is ArgumentException or IOException or CryptographicException or FormatException)
+    {
+        Console.Error.WriteLine("Hata: " + ex.Message);
+        return 1;
+    }
+}
+
+static int KeyGen(Dictionary<string, string> o)
+{
+    var dir = Required(o, "out");
+    Directory.CreateDirectory(dir);
+    var privatePath = Path.Combine(dir, "license-signing.private.pem");
+    var publicPath = Path.Combine(dir, "license-public.pem");
+    if (File.Exists(privatePath))
+        throw new IOException($"{privatePath} zaten var; üzerine yazılmadı.");
+
+    using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+    File.WriteAllText(privatePath, key.ExportPkcs8PrivateKeyPem());
+    File.WriteAllText(publicPath, key.ExportSubjectPublicKeyInfoPem());
+
+    Console.WriteLine($"Özel anahtar : {privatePath}  (GİZLİ — repoya eklemeyin)");
+    Console.WriteLine($"Açık anahtar : {publicPath}");
+    Console.WriteLine("Açık anahtarı src/SystemPanel/Licensing/license-public.pem olarak kopyalayıp ürünü derleyin.");
+    return 0;
+}
+
+static int Issue(Dictionary<string, string> o)
+{
+    using var key = ECDsa.Create();
+    key.ImportFromPem(File.ReadAllText(Required(o, "key")));
+
+    var license = new LicenseInfo
+    {
+        LicenseId = o.GetValueOrDefault("id") ?? $"SP-{DateTime.UtcNow:yyyyMMdd}-{RandomNumberGenerator.GetHexString(8)}",
+        Customer = Required(o, "customer"),
+        Edition = o.GetValueOrDefault("edition") ?? LicenseEditions.Standard,
+        IssuedUtc = DateTime.UtcNow,
+        ExpiresUtc = Date(o, "expires"),
+        SupportExpiresUtc = Date(o, "support"),
+        MaxAgents = o.TryGetValue("max-agents", out var m) ? int.Parse(m, CultureInfo.InvariantCulture) : null,
+        Features = (o.GetValueOrDefault("features") ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+    };
+
+    var unknown = license.Features.Except(LicenseFeatures.All).ToList();
+    if (unknown.Count > 0)
+        throw new ArgumentException("Bilinmeyen modül: " + string.Join(", ", unknown));
+
+    var outPath = Required(o, "out");
+    File.WriteAllText(outPath, LicenseCodec.Sign(license, key));
+    Console.WriteLine($"Lisans yazıldı: {outPath} ({license.LicenseId}, {license.Customer})");
+    return 0;
+}
+
+static int Verify(Dictionary<string, string> o)
+{
+    using var key = LicenseCodec.ImportPublicKeyPem(File.ReadAllText(Required(o, "public")));
+    if (!LicenseCodec.TryVerify(File.ReadAllText(Required(o, "license")), key, out var license, out var error))
+    {
+        Console.Error.WriteLine("GEÇERSİZ: " + error);
+        return 2;
+    }
+
+    var status = LicenseEvaluator.Evaluate(license!, DateTime.UtcNow);
+    Console.WriteLine($"{status.State}: {license!.LicenseId} | {license.Customer} | {license.Edition} | bitiş {license.ExpiresUtc?.ToString("yyyy-MM-dd") ?? "süresiz"} | agent {license.MaxAgents?.ToString() ?? "sınırsız"}");
+    return status.State == LicenseState.Valid ? 0 : 3;
+}
+
+static DateTime? Date(Dictionary<string, string> o, string name)
+    => o.TryGetValue(name, out var v)
+        ? DateTime.SpecifyKind(DateTime.ParseExact(v, "yyyy-MM-dd", CultureInfo.InvariantCulture).AddDays(1).AddTicks(-1), DateTimeKind.Utc)
+        : null;
+
+static string Required(Dictionary<string, string> o, string name)
+    => o.TryGetValue(name, out var v) && !string.IsNullOrWhiteSpace(v) ? v : throw new ArgumentException($"--{name} gerekli.");
+
+static Dictionary<string, string> ParseOptions(string[] args)
+{
+    var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (!args[i].StartsWith("--", StringComparison.Ordinal))
+            throw new ArgumentException("Beklenmeyen argüman: " + args[i]);
+        var name = args[i][2..];
+        result[name] = i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal) ? args[++i] : "true";
+    }
+    return result;
+}
+
+static int Usage()
+{
+    Console.WriteLine("""
+        splicense keygen --out <klasör>
+        splicense issue  --key <private.pem> --customer "<Kurum>" --out <dosya.lic> [--edition Standard|Enterprise|Evaluation]
+                         [--expires yyyy-MM-dd] [--support yyyy-MM-dd] [--max-agents N] [--features ad,laps,gpo,sccm,monitoring,dashboard,sms] [--id <no>]
+        splicense verify --public <public.pem> --license <dosya.lic>
+        """);
+    return 1;
+}

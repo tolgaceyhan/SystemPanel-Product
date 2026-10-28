@@ -1,0 +1,29 @@
+﻿@model SystemPanel.ViewModels.AdUser.AssignRoleViewModel
+
+@{
+    ViewData["Title"] = "Rol Atama";
+}
+
+<h3 class="mb-3">👤 Rol Atama — <code>@Model.UserName</code></h3>
+
+<form asp-action="AssignRole" method="post" class="row gy-3">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="UserId" />
+
+    <div class="col-md-6">
+        <label asp-for="SelectedRole" class="form-label">Rol</label>
+        <select asp-for="SelectedRole" asp-items="Model.AvailableRoles" class="form-select">
+            <option value="">(Rol seçiniz)</option>
+        </select>
+        <span class="text-danger" asp-validation-for="SelectedRole"></span>
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <a class="btn btn-secondary" href="@Url.Action("Index","AdUser")">Geri</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "Toplu Kullanıcı Silme";
+}
+<h3 class="mb-3">🗑️ Toplu Sil</h3>
+
+<form asp-action="UploadDeleteCsv" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <div class="mb-2">
+        <input type="file" name="csv" accept=".csv,text/csv" class="form-control" required />
+        <div class="form-text">Sütunlar: UserName</div>
+    </div>
+    <button class="btn btn-danger" type="submit">Yükle</button>
+    <a class="btn btn-secondary ms-2" href="@Url.Action("Index","AdUser")">Geri</a>
+</form>
+
+@if (TempData["BulkResult"] is string br && !string.IsNullOrWhiteSpace(br))
+{
+    <pre class="mt-3 p-3 bg-light border">@br</pre>
+}

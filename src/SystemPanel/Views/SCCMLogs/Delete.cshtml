@@ -1,0 +1,25 @@
+@model SystemPanel.Models.SccmLog
+
+<h2 class="mb-4 text-danger">Log Kaydını Sil</h2>
+
+<div class="alert alert-warning">
+    Bu log kaydını silmek üzeresiniz. Devam etmek istediğinize emin misiniz?
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">IP Adresi</dt>
+    <dd class="col-sm-9">@Model.Ip</dd>
+
+    <dt class="col-sm-3">Tarih</dt>
+    <dd class="col-sm-9">@Model.Tarih?.ToString("dd.MM.yyyy HH:mm")</dd>
+
+    <dt class="col-sm-3">Log Mesajı</dt>
+    <dd class="col-sm-9">@Model.ScLog</dd>
+</dl>
+
+<form asp-action="DeleteConfirmed" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Sil</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary ms-2">İptal</a>
+</form>

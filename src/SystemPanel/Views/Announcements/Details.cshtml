@@ -1,0 +1,30 @@
+﻿@model SystemPanel.Models.Announcements
+
+<div class="container mt-4">
+    <h2 class="mb-3">Duyuru Detayları</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>@Model.Aciklama</strong> (@Model.Turu)
+        </div>
+        <div class="card-body">
+            <p><strong>İlgili Birim:</strong> @Model.Birimi</p>
+            <p><strong>Kayıt Tarihi:</strong> @Model.KayitTarihi.ToString("dd MMMM yyyy HH:mm")</p>
+
+            <p><strong>Detaylar:</strong></p>
+            <p>@Model.Detay</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.FilePath))
+            {
+                <p class="mt-3">
+                    <strong>Ek Dosya:</strong>
+                    <a href="@Model.FilePath" target="_blank">Dosyayı Aç</a>
+                </p>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="List" class="btn btn-secondary">Listeye Dön</a>
+    </div>
+</div>

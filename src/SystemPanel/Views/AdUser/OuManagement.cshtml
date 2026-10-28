@@ -1,0 +1,12 @@
+@{
+    ViewData["Title"] = "OU Yönetimi";
+}
+<h3 class="mb-3">🏷️ OU Yönetimi</h3>
+<p class="text-muted">OU ve alt öğeleri için hızlı bağlantılar.</p>
+
+<div class="list-group">
+    <a class="list-group-item list-group-item-action" href="@Url.Action("OuSearch","AdUser")">OU Ara</a>
+    <a class="list-group-item list-group-item-action" href="@Url.Action("Index","AdUser")">OU Ağacı (Görsel Tarama)</a>
+    <a class="list-group-item list-group-item-action disabled">OU Oluştur (yakında)</a>
+    <a class="list-group-item list-group-item-action disabled">OU Taşı (yakında)</a>
+</div>

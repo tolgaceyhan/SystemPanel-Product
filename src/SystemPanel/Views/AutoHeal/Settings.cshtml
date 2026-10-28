@@ -1,0 +1,19 @@
+﻿@model SystemPanel.ViewModels.AutoHeal.AutoHealSettingsVm
+
+<h3>🤖 Auto-Heal Ayarları</h3>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Cooldown Süresi (dakika)</label>
+        <input asp-for="CooldownMinutes"
+               class="form-control"
+               min="1" max="120" />
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="Enabled" class="form-check-input" />
+        <label class="form-check-label">Auto-Heal Aktif</label>
+    </div>
+
+    <button class="btn btn-primary">💾 Kaydet</button>
+</form>

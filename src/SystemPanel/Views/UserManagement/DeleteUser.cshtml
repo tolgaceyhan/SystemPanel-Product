@@ -1,0 +1,36 @@
+﻿@using SystemPanel.ViewModels.UserManagement
+@model UserListItemViewModel
+
+@{
+    ViewData["Title"] = "Kullanıcı Sil";
+}
+
+<h3 class="mb-3 text-danger">Kullanıcı Silme Onayı</h3>
+
+<div class="alert alert-warning">
+    <strong>@Model.UserName</strong> kullanıcısını silmek üzeresiniz.
+    Bu işlem geri alınamaz. Emin misiniz?
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Kullanıcı Adı</dt>
+    <dd class="col-sm-9">@Model.UserName</dd>
+
+    <dt class="col-sm-3">E-posta</dt>
+    <dd class="col-sm-9">@Model.Email</dd>
+
+    <dt class="col-sm-3">Roller</dt>
+    <dd class="col-sm-9">
+        @(Model.Roles != null && Model.Roles.Any()
+            ? string.Join(", ", Model.Roles)
+            : "Rol yok")
+    </dd>
+</dl>
+
+<form method="post" asp-action="Delete">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <button class="btn btn-danger">
+        <i class="fas fa-trash me-1"></i> Evet, Sil
+    </button>
+    <a href="@Url.Action("Index","UserManagement")" class="btn btn-secondary ms-2">Vazgeç</a>
+</form>

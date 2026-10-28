@@ -1,0 +1,15 @@
+@model List<SystemPanel.Models.ServiceStatus>
+<table class="table table-striped">
+    <thead>
+        <tr><th>Servis Adı</th><th>Durum</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var svc in Model)
+        {
+            <tr>
+                <td>@svc.ServiceName</td>
+                <td>@svc.State</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,25 @@
+
+@model Microsoft.AspNetCore.Identity.IdentityUser
+
+@{
+    ViewData["Title"] = "Rol Ata";
+}
+
+<h2>Kullanıcıya Rol Ata</h2>
+
+<form method="post" asp-action="AssignRole">
+    <input type="hidden" name="userName" value="@Model.UserName" />
+
+    <div class="mb-3">
+        <label class="form-label">Kullanıcı Adı</label>
+        <input type="text" class="form-control" value="@Model.UserName" disabled />
+    </div>
+
+    <div class="mb-3">
+        <label for="roleName" class="form-label">Rol Adı</label>
+        <input type="text" class="form-control" name="roleName" placeholder="Örn: Admin, User" required />
+    </div>
+
+    <button type="submit" class="btn btn-success">Rol Ata</button>
+    <a href="@Url.Action("Index", "UserManagement")" class="btn btn-secondary">İptal</a>
+</form>

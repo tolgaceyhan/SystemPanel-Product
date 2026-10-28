@@ -1,0 +1,58 @@
+@model List<SystemPanel.Models.SccmDpSnapshot>
+
+<h2 class="mb-4">Distribution Point (DP) Durum Özeti</h2>
+
+<link href="~/css/bootstrap.min.css" rel="stylesheet" />
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Sunucu</th>
+            <th>IP</th>
+            <th>Site</th>
+            <th>Sağlık</th>
+            <th>Kritik</th>
+            <th>Son Güncelleme</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var dp in Model)
+        {
+            string healthColor =
+            dp.HealthScore >= 90 ? "bg-success" :
+            dp.HealthScore >= 60 ? "bg-warning text-dark" :
+            "bg-danger";
+
+            <tr>
+                <td><strong>@dp.ServerName</strong></td>
+                <td>@dp.IpAddress</td>
+                <td>@dp.SiteCode</td>
+                <td>
+                    <span class="badge @healthColor">
+                        % @dp.HealthScore
+                    </span>
+                </td>
+                <td>
+                    @if (dp.CriticalDownCount > 0)
+                    {
+                        <span class="badge bg-danger">
+                            @dp.CriticalDownCount
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">0</span>
+                    }
+                </td>
+                <td>@dp.LastUpdated.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>
+                    <a class="btn btn-sm btn-primary"
+                       href="/Sccm/Details?serverName=@dp.ServerName">
+                        Detay
+                    </a>
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>

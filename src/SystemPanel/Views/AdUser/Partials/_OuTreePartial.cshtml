@@ -1,0 +1,21 @@
+@model IEnumerable<SystemPanel.Models.OrganizationalUnit>
+
+@* OU ağacında artık DN görünmez; sadece OU adı gösterilir.
+   DN, data attributelerde ve title’da (tooltip) saklanır. *@
+
+@foreach (var ou in Model ?? Enumerable.Empty<SystemPanel.Models.OrganizationalUnit>())
+{
+    <li class="list-group-item p-0 border-0">
+        <div class="d-flex align-items-center">
+            <button type="button"
+                    class="ou-node btn btn-link text-start w-100 d-flex align-items-center gap-2"
+                    data-ou-dn="@ou.DistinguishedName"
+                    data-ou-name="@ou.Name"
+                    title="@ou.DistinguishedName">
+                <i class="bi bi-folder2 text-warning"></i>
+                <span class="ou-label text-truncate">@ou.Name</span>
+            </button>
+        </div>
+        @* Çocuklar SPA tarafında dinamik yüklenecek; boş <ul> eklemiyoruz *@
+    </li>
+}

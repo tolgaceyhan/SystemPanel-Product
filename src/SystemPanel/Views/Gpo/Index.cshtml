@@ -1,0 +1,119 @@
+@model List<SystemPanel.ViewModels.Gpo.GpoViewModel>
+
+@inject SystemPanel.Security.IPermissionService PermissionService
+@{
+    ViewData["Title"] = "GPO Listesi";
+    var canEdit = await PermissionService.HasPermissionAsync(User, SystemPanel.Security.Permissions.GpoEdit);
+    var canCreate = await PermissionService.HasPermissionAsync(User, SystemPanel.Security.Permissions.GpoCreate);
+    var selectedOuDn = ViewBag.SelectedOu as string;
+}
+
+<h2 class="mb-4">🧾 GPO Listesi</h2>
+<partial name="_StatusMessages" />
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        @if (canCreate)
+        {
+            <a href="@Url.Action("Import", "Gpo")" class="btn btn-outline-primary">
+                <i class="fas fa-file-import me-1"></i> GPO İçe Aktar
+            </a>
+        }
+        <a href="@Url.Action("Tree", "Gpo")" class="btn btn-outline-primary ms-2">
+            <i class="fas fa-sitemap me-1"></i> GPO OU Ağaç Görünümü
+        </a>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row g-2">
+            <div class="col-md-8">
+                <label class="form-label">OU DN ile filtrele (yalnızca o OU'ya doğrudan bağlı GPO'lar)</label>
+                <input type="text" name="ou" value="@selectedOuDn" class="form-control" placeholder="OU=...,DC=...,DC=..." />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter me-1"></i> Filtrele
+                </button>
+                <a href="@Url.Action("Index","Gpo")" class="btn btn-outline-secondary">
+                    Temizle
+                </a>
+            </div>
+        </form>
+        @if (!string.IsNullOrWhiteSpace(selectedOuDn))
+        {
+            <div class="mt-2 text-muted">
+                <i class="fas fa-sitemap me-1"></i> Seçili OU: <code>@selectedOuDn</code>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <table class="table table-bordered table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>📄 Ad</th>
+                <th>📝 Açıklama</th>
+                <th>📌 Durum</th>
+                <th class="text-center">⚙️ İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var gpo in Model)
+            {
+                <tr>
+                    <td>@gpo.DisplayName</td>
+                    <td>@(string.IsNullOrWhiteSpace(gpo.Description) ? "-" : gpo.Description)</td>
+                    <td>
+                        @if (gpo.IsEnabled)
+                        {
+                            <span class="badge bg-success">Aktif</span>
+                        }
+                        else if (gpo.IsFullyDisabled)
+                        {
+                            <span class="badge bg-danger">Devre Dışı</span>
+                        }
+                        else if (!string.IsNullOrEmpty(gpo.GpoStatus))
+                        {
+                            <span class="badge bg-warning text-dark">Kısmi (@gpo.GpoStatus)</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Bilinmiyor</span>
+                        }
+                    </td>
+                    <td class="text-center">
+                        <a class="btn btn-sm btn-primary me-1" href="@Url.Action("Details", "Gpo", new { id = gpo.Id })">
+                            <i class="fas fa-info-circle me-1"></i> Detay
+                        </a>
+
+                        @if (canEdit)
+                        {
+                            <form asp-action="Toggle" method="post" class="d-inline"
+                                  onsubmit="return confirm('@(gpo.IsEnabled ? "GPO devre dışı bırakılsın mı?" : "GPO etkinleştirilsin mi?")');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@gpo.Id" />
+                                <input type="hidden" name="enable" value="@(gpo.IsEnabled ? "false" : "true")" />
+                                <button type="submit" class="btn btn-sm @(gpo.IsEnabled ? "btn-warning" : "btn-success")">
+                                    <i class="fas @(gpo.IsEnabled ? "fa-pause-circle" : "fa-play-circle") me-1"></i>
+                                    @(gpo.IsEnabled ? "Devre Dışı" : "Etkinleştir")
+                                </button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-1"></i> Kayıtlı GPO bulunamadı.
+    </div>
+}
+
+

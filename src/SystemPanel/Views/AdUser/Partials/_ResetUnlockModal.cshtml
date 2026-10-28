@@ -1,0 +1,108 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+
+@{
+    // Anti-forgery token’ı JS ile kullanmak için bir hidden input’ta üretiyoruz
+    var tokens = Xsrf.GetAndStoreTokens(Context);
+}
+
+<div class="modal fade" id="resetUnlockModal" tabindex="-1" aria-labelledby="resetUnlockLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="resetUnlockForm" method="post">
+            <input type="hidden" name="__RequestVerificationToken" value="@tokens.RequestToken" />
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title" id="resetUnlockLabel">🔐 Şifre Sıfırlama ve Kilit Açma</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong><span id="resetUsername"></span></strong> kullanıcısının şifresi sıfırlanacak ve varsa kilidi açılacaktır.</p>
+                    <div class="alert alert-info">
+                        İşlem sonrası yeni şifre rastgele üretilecek ve burada görüntülenecek.
+                    </div>
+                    <div id="resetResult" class="d-none">
+                        <div class="alert alert-success">
+                            <strong>Yeni Şifre:</strong>
+                            <span id="newPassword" class="text-monospace"></span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="btnCopyPwd">📋 Kopyala</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="userDnInput" name="userDn" />
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-warning">✔ Onayla ve İşlemi Yap</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Modal açılırken verileri set et
+        document.addEventListener('show.bs.modal', function (e) {
+          if (e.target && e.target.id === 'resetUnlockModal') {
+            const button = e.relatedTarget;
+            if (!button) return;
+            const userDn = button.getAttribute('data-userdn');
+            const username = button.getAttribute('data-username');
+
+            document.getElementById('userDnInput').value = userDn;
+            document.getElementById('resetUsername').textContent = username;
+
+            // temizle
+            document.getElementById('resetResult').classList.add('d-none');
+            document.getElementById('newPassword').textContent = '';
+          }
+        });
+
+        // Şifre kopyalama
+        document.addEventListener('click', function(e){
+          if(e.target && e.target.id === 'btnCopyPwd'){
+            const pwd = document.getElementById('newPassword').textContent;
+            navigator.clipboard.writeText(pwd)
+              .then(() => window.toastr?.success('Şifre kopyalandı 📋'))
+              .catch(() => window.toastr?.error('Şifre kopyalanamadı'));
+          }
+        });
+
+        // Reset/Kilit form submit (AJAX)
+        (function(){
+          const form = document.getElementById('resetUnlockForm');
+          if (!form) return;
+
+          form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const userDn = document.getElementById('userDnInput').value;
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+
+            try {
+              const resp = await fetch('/AdUser/ResetUnlock', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                  'RequestVerificationToken': token
+                },
+                body: new URLSearchParams({ userDn })
+              });
+
+              if (!resp.ok) throw new Error('HTTP ' + resp.status);
+              const data = await resp.json();
+
+              if (data.ok) {
+                const resBox = document.getElementById('resetResult');
+                document.getElementById('newPassword').textContent = data.password || '';
+                resBox.classList.remove('d-none');
+                window.toastr?.success('Şifre sıfırlandı, kilit (varsa) açıldı.');
+              } else {
+                window.toastr?.error(data.error || 'İşlem başarısız.');
+              }
+            } catch (err) {
+              window.toastr?.error('İşlem sırasında hata oluştu.');
+            }
+          });
+        })();
+    </script>
+}

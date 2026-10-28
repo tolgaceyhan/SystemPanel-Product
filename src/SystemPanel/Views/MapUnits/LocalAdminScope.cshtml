@@ -1,0 +1,31 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Local Admin Scope";
+}
+<h4>Yerel Yönetici Kapsamı</h4>
+<div class="text-muted">OU: @Model.Province</div>
+
+<div class="row mt-3">
+    <div class="col-md-6">
+        <h6>Kullanıcılar (@(Model.Users?.Count ?? 0))</h6>
+        <ul class="list-group">
+            @foreach (var u in Model.Users ?? new List<SystemPanel.Models.AdUser>())
+            {
+                <li class="list-group-item">
+                    <strong>@u.SamAccountName</strong> — @u.DisplayName
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <h6>Bilgisayarlar (@(Model.Computers?.Count ?? 0))</h6>
+        <ul class="list-group">
+            @foreach (var c in Model.Computers ?? new List<SystemPanel.Models.AdComputer>())
+            {
+                <li class="list-group-item">
+                    <strong>@c.Name</strong> — @c.OperatingSystem
+                </li>
+            }
+        </ul>
+    </div>
+</div>

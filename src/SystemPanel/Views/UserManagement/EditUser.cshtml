@@ -1,0 +1,66 @@
+﻿@using SystemPanel.ViewModels.UserManagement
+@model EditUserViewModel
+
+@{
+    ViewData["Title"] = "Kullanıcı Düzenle";
+}
+
+<h3 class="mb-4">Kullanıcı Düzenle: @Model.UserName</h3>
+
+<form method="post">
+    <input type="hidden" asp-for="Id" />
+    <div class="row">
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Kullanıcı Adı</label>
+            <input class="form-control" asp-for="UserName" readonly />
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">E-posta</label>
+            <input class="form-control" asp-for="Email" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Telefon</label>
+            <input class="form-control" asp-for="PhoneNumber" />
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Kilitlenebilir</label><br />
+            <input type="checkbox" asp-for="LockoutEnabled" />
+        </div>
+
+        <div class="col-md-12 mb-3">
+            <label class="form-label fw-bold">Roller</label>
+            <div class="border rounded p-2" style="max-height:220px; overflow:auto;">
+                @for (int i = 0; i < Model.AllRoles.Count; i++)
+                {
+                    var roleName = Model.AllRoles[i];
+                    var isChecked = Model.SelectedRoles.Contains(roleName);
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               name="SelectedRoles"
+                               value="@roleName"
+                        @(isChecked ? "checked" : "") />
+                        <label class="form-check-label">@roleName</label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-md-12 mt-3">
+            <button class="btn btn-primary">
+                <i class="fas fa-save me-1"></i> Kaydet
+            </button>
+            <a href="@Url.Action("Index","UserManagement")" class="btn btn-secondary ms-2">Geri</a>
+        </div>
+
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

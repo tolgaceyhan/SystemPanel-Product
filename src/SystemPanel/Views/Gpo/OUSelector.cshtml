@@ -1,0 +1,37 @@
+<div id="ouPopup" class="modal" tabindex="-1" style="display:none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content p-3">
+            <h4>OU Seç</h4>
+
+            <div id="ouTreeContainer">
+                Yükleniyor...
+            </div>
+
+            <button class="btn btn-secondary mt-3" onclick="closeOuPopup()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openOuPopup() {
+        document.getElementById("ouPopup").style.display = "block";
+
+        if (!window.treeLoaded) {
+            fetch("/Gpo/Tree")
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById("ouTreeContainer").innerHTML = html;
+                    window.treeLoaded = true;
+                })
+        }
+    }
+
+    function closeOuPopup() {
+        document.getElementById("ouPopup").style.display = "none";
+    }
+
+    function selectOu(dn) {
+        document.getElementById("ouInput").value = dn;
+        closeOuPopup();
+    }
+</script>

@@ -1,0 +1,38 @@
+﻿@model SystemPanel.Models.ServiceStatus
+
+<h2>@Model.ServiceName - Durum: @Model.Status</h2>
+
+<div class="container">
+    <h4>Servis Detayları</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Servis Adı</th>
+                <th>Durum</th>
+                <th>State</th>
+                <th>Hareket</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@Model.ServiceName</td>
+                <td>@Model.Status</td>
+                <td>@Model.State</td>
+                <td>
+                    <!-- Start and Stop buttons for service control -->
+                    @if (Model.Status == "Stopped")
+                    {
+                        <a href="@Url.Action("StartService", "ApiServices", new { id = Model.Id })" class="btn btn-success">Başlat</a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("StopService", "ApiServices", new { id = Model.Id })" class="btn btn-danger">Durdur</a>
+                    }
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Back to the list of services -->
+<a href="@Url.Action("Index", "ApiServices")" class="btn btn-secondary">Geri</a>

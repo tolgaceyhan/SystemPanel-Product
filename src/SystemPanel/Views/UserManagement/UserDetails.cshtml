@@ -1,0 +1,57 @@
+﻿@using SystemPanel.ViewModels.UserManagement
+@model UserListItemViewModel
+
+@{
+    ViewData["Title"] = "Kullanıcı Detayı";
+}
+
+<h3 class="mb-3">Kullanıcı Detayı: @Model.UserName</h3>
+
+<dl class="row">
+    <dt class="col-sm-3">Kullanıcı Adı</dt>
+    <dd class="col-sm-9">@Model.UserName</dd>
+
+    <dt class="col-sm-3">E-posta</dt>
+    <dd class="col-sm-9">@Model.Email</dd>
+
+    <dt class="col-sm-3">Telefon</dt>
+    <dd class="col-sm-9">@Model.PhoneNumber</dd>
+
+    <dt class="col-sm-3">E-posta Onayı</dt>
+    <dd class="col-sm-9">
+        @if (Model.EmailConfirmed)
+        {
+            <span class="badge bg-success">Onaylı</span>
+        }
+        else
+        {
+            <span class="badge bg-secondary">Onaysız</span>
+        }
+    </dd>
+
+    <dt class="col-sm-3">Roller</dt>
+    <dd class="col-sm-9">
+        @(Model.Roles != null && Model.Roles.Any()
+            ? string.Join(", ", Model.Roles)
+            : "Rol yok")
+    </dd>
+
+    <dt class="col-sm-3">Durum</dt>
+    <dd class="col-sm-9">
+        @if (Model.LockoutEnd.HasValue && Model.LockoutEnd > DateTimeOffset.UtcNow)
+        {
+            <span class="badge bg-danger">Kilitli</span>
+        }
+        else
+        {
+            <span class="badge bg-success">Aktif</span>
+        }
+    </dd>
+</dl>
+
+<a href="@Url.Action("Index","UserManagement")" class="btn btn-secondary">
+    Geri
+</a>
+<a href="@Url.Action("Edit","UserManagement", new { id = Model.Id })" class="btn btn-primary ms-2">
+    Düzenle
+</a>

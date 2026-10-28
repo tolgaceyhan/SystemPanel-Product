@@ -1,0 +1,25 @@
+@model IEnumerable<SystemPanel.ViewModels.AuditEntryViewModel>
+
+@{
+    ViewData["Title"] = "İşlem Geçmişi";
+}
+
+<h2 class="fw-bold mt-2 mb-4">İşlem Geçmişi (uygulama logları)</h2>
+
+<table class="table table-sm table-hover">
+    <thead class="table-light">
+        <tr><th>Zaman</th><th>Kullanıcı</th><th>İşlem</th><th>Detay</th><th>IP</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var e in Model)
+        {
+            <tr>
+                <td class="text-nowrap">@e.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@e.User</td>
+                <td>@e.Action</td>
+                <td>@e.Detail</td>
+                <td>@e.Ip</td>
+            </tr>
+        }
+    </tbody>
+</table>

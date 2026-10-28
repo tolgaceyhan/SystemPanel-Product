@@ -1,0 +1,63 @@
+<header class="navbar navbar-expand-lg navbar-light bg-light border-bottom px-3 shadow-sm">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+
+        <!-- Logo + Başlık -->
+        <div class="d-flex align-items-center gap-3">
+            <img src="@Branding.Value.LogoPath" alt="@Branding.Value.ProductName" height="60" />
+            <h5 class="mb-0">@Branding.Value.ProductName Yönetim Paneli</h5>
+        </div>
+
+        <!-- Sağ Menü -->
+        <div class="d-flex align-items-center gap-3">
+
+            <!-- Favori Uygulamalar -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="favoritesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    ⭐ Favori Modüller
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="favoritesDropdown" style="max-height: 300px; overflow-y: auto; min-width: 220px;">
+                    <li><a class="dropdown-item" href="/UserManagement/Index">👤 Kullanıcı Yönetimi</a></li>
+                    <li><a class="dropdown-item" href="/Sccm/dps">💽 SCCM Dağıtım Noktaları</a></li>
+                    <li><a class="dropdown-item" href="/Gpo/Index">🛡️ GPO Yönetimi</a></li>
+                    <li><a class="dropdown-item" href="/Log/Index">📝 Log İzleme</a></li>
+                    <li><a class="dropdown-item" href="/Backup/Index">📦 Yedekleme</a></li>
+                    <li><a class="dropdown-item" href="/Monitoring/Index">📈 Sunucu İzleme</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Health" asp-action="Index">Sistem Sağlığı</a>
+                    </li>
+
+                    <li><a class="dropdown-item" href="/Permissions/Index">🔐 Yetkilendirme</a></li>
+                </ul>
+            </div>
+
+            <!-- Kullanıcı Menüsü -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    👤 @User.Identity?.Name
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li>
+                        <span class="dropdown-item-text text-muted">
+                            <i class="fas fa-id-badge me-1"></i> Roller:
+                            @foreach (var role in User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value))
+                            {
+                                <span class="badge bg-secondary me-1">@role</span>
+                            }
+                        </span>
+                    </li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item" href="/Account/Profile">👤 Profilim</a></li>
+                    <li>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="dropdown-item text-danger">
+                                🚪 Çıkış Yap
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</header>

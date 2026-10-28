@@ -1,0 +1,42 @@
+﻿@model SystemPanel.Models.AdUser
+@{
+    ViewData["Title"] = "Kullanıcı Detay";
+}
+<h3 class="mb-3">👤 Kullanıcı Detayı</h3>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Ad Soyad</dt>
+            <dd class="col-sm-9">@Model.DisplayName</dd>
+
+            <dt class="col-sm-3">Kullanıcı Adı</dt>
+            <dd class="col-sm-9">@Model.UserName</dd>
+
+            <dt class="col-sm-3">E-posta</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">DN</dt>
+            <dd class="col-sm-9"><code>@Model.DistinguishedName</code></dd>
+        </dl>
+
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary btn-sm" href="@Url.Action("Edit","AdUser", new { id = Model.Id })">✏️ Düzenle</a>
+            <a class="btn btn-danger btn-sm" href="@Url.Action("Delete","AdUser", new { id = Model.Id })">🗑️ Sil</a>
+
+            <button type="button"
+                    class="btn btn-warning btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#resetUnlockModal"
+                    data-userdn="@Model.DistinguishedName"
+                    data-username="@(!string.IsNullOrEmpty(Model.DisplayName) ? Model.DisplayName : Model.UserName)">
+                🔁 Şifre/Kilit
+            </button>
+
+            <a class="btn btn-secondary btn-sm" href="@Url.Action("Index","AdUser")">⬅ Geri</a>
+        </div>
+    </div>
+</div>
+
+<!-- Index’teki modalı tekrar kullanıyoruz; Details sayfasında da çalışması için include edilmeli.
+     Eğer Layout’ta değilse, bu sayfaya da aynı modal bloğunu ekleyebilirsin. -->

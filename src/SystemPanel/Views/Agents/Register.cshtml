@@ -1,0 +1,31 @@
+@model SystemPanel.Controllers.AgentRegisterViewModel
+@{
+    ViewData["Title"] = "Agent Kaydet";
+}
+
+<h2 class="fw-bold mt-2 mb-3">Agent Kaydet</h2>
+<p class="text-muted">
+    Her sunucu için ayrı bir agent kaydı oluşturulur. Agent yalnızca burada girilen sunucu adı adına veri gönderebilir.
+    İl bilgisi ana sayfadaki il bazlı görünürlük için kullanılır ve agent'ın kendisinden alınmaz.
+</p>
+
+<form asp-action="Register" method="post" class="card card-body shadow-sm" style="max-width:640px">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="mb-3">
+        <label asp-for="Hostname" class="form-label fw-bold">Sunucu adı (NetBIOS)</label>
+        <input asp-for="Hostname" class="form-control" autocomplete="off" />
+        <span asp-validation-for="Hostname" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Province" class="form-label fw-bold">İl / birim (opsiyonel)</label>
+        <input asp-for="Province" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label fw-bold">Açıklama (opsiyonel)</label>
+        <input asp-for="Description" class="form-control" />
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Kaydet ve anahtar üret</button>
+        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
+    </div>
+</form>

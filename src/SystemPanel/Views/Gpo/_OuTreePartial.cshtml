@@ -1,0 +1,38 @@
+﻿@model SystemPanel.ViewModels.Gpo.GpoOuTreeViewModel
+
+<li class="list-group-item bg-light border-0">
+    <div class="d-flex align-items-center mb-1">
+        <i class="fas fa-folder text-warning me-2"></i>
+        <strong>@Model.OuName</strong>
+    </div>
+
+    @if (Model.LinkedGpos?.Any() == true)
+    {
+        <ul class="list-group list-group-flush ms-4 mb-2">
+            @foreach (var gpo in Model.LinkedGpos)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-shield-alt text-primary me-2"></i>
+                        <span class="text-dark">@gpo</span>
+                    </div>
+                    <a href="@Url.Action("Details", "Gpo", new { id = gpo })"
+                       class="btn btn-sm btn-outline-info"
+                       title="GPO Detaylarını Görüntüle">
+                        <i class="fas fa-info-circle"></i> Detay
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (Model.ChildOus?.Any() == true)
+    {
+        <ul class="list-group list-group-flush ms-4">
+            @foreach (var childOu in Model.ChildOus)
+            {
+                @Html.Partial("_OuTreePartial", childOu)
+            }
+        </ul>
+    }
+</li>

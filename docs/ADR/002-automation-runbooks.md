@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Durum | Kabul edildi. Faz 1 (MVP), Faz 2 (agent) ve Faz 3 (zamanlama/alarm) uygulandı; kılavuz: [AUTOMATION.md](../AUTOMATION.md) |
+| Durum | Kabul edildi. Faz 1–4 uygulandı. Kılavuzlar: [AUTOMATION.md](../AUTOMATION.md), [RUNBOOK-DEVELOPMENT.md](../RUNBOOK-DEVELOPMENT.md) |
 | Tarih | 2026-10-28 |
 | Kapsam | SystemPanel web, Agent, Contracts |
 
@@ -152,6 +152,13 @@ Draft ─► PendingApproval ─► Approved ─► Queued ─► Running ─►
 | **2 — Agent** | `AgentCommands` kuyruğu, agent tarafında imza + allowlist doğrulaması. Runbook'lar: servis yeniden başlatma, disk temizliği | Allowlist dışı iş reddi testli |
 | **3 — Zamanlama/olay** | Cron tetikleyici, alarm → runbook (yalnızca low risk) | Yüksek riskli runbook'ların otomatik çalışmadığı testli |
 | **4 — Kurum runbook'ları** | Kurum imzalama anahtarı kaydı, imzalama aracı (`splicense` benzeri `sprunbook sign`) | Anahtar iptali testli |
+
+**Faz 4 uygulama notları:**
+- `sprunbook`, `splicense`'tan ayrı ve kuruma dağıtılabilir bir araçtır: keygen, new, lint, sign, verify.
+- İmzalama denetime (lint) bağlıdır.
+- `org.` ad alanı kurumlara ayrılmıştır; runbook kimliği, onu ilk yayımlayan kaynağa (üretici veya kurum) bağlı kalır.
+- Anahtar iptal edilince başlamamış talepler iptal edilir ve zamanlamalar kapatılır.
+- Örnek kütüphane: `runbooks/examples`.
 
 ## Sonuçlar
 

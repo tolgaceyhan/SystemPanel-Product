@@ -34,7 +34,7 @@ dotnet test SystemPanel.sln
 - [Mimari](docs/ARCHITECTURE.md) · [Güvenlik](docs/SECURITY.md) · [Kurulum](docs/DEPLOYMENT.md)
 - [Yetkilendirme](docs/AUTHORIZATION.md) · [Agent](docs/AGENT.md) · [Veritabanı](docs/DATABASE.md)
 - [Yol haritası](docs/ROADMAP.md) · [ADR-001 İzleme](docs/ADR/001-monitoring-architecture.md) · [ADR-002 Otomasyon](docs/ADR/002-automation-runbooks.md)
-- [Otomasyon](docs/AUTOMATION.md) · [Ürün lisanslama](docs/LICENSING.md) · [Üçüncü taraf lisansları](THIRD-PARTY-NOTICES.md)
+- [Otomasyon](docs/AUTOMATION.md) · [Runbook geliştirme](docs/RUNBOOK-DEVELOPMENT.md) · [Ürün lisanslama](docs/LICENSING.md) · [Üçüncü taraf lisansları](THIRD-PARTY-NOTICES.md)
 - [Değişiklik günlüğü](CHANGELOG.md)
 
 ## Güvenlik

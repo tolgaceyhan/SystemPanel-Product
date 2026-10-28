@@ -21,9 +21,11 @@ DOTNET_ROLL_FORWARD=Major dotnet ef migrations add <Ad> --project src/SystemPane
 - `src/SystemPanel/Services/Agents/`: agent kimliği, ingest, retention
 - `src/SystemPanel/Services/Gpo/` + `src/SystemPanel/scripts/*.ps1`: GPO (yalnızca sabit betikler)
 - `src/SystemPanel.Contracts/`: agent API sözleşmesi ve lisans biçimi (`Licensing/`)
-- `src/SystemPanel/Licensing/`: `ILicenseService`; `tools/SystemPanel.LicenseTool`: üretici aracı (lisans + runbook imzalama)
+- `src/SystemPanel/Licensing/`: `ILicenseService`; `tools/SystemPanel.LicenseTool` (`splicense`): üretici aracı (lisans + yerleşik runbook imzalama; müşteriye dağıtılmaz)
+- `tools/SystemPanel.RunbookTool` (`sprunbook`): kurum runbook aracı (keygen/new/lint/sign/verify); denetim kuralları `src/SystemPanel.Contracts/Automation/RunbookSource.cs`
 - `src/SystemPanel/Automation/`: otomasyon motoru (ADR-002): `RunbookCatalog`, `RunbookTrustStore`, `RunbookParameterBinder`, `RunbookRunService` (TÜM durum geçişleri burada), `PowerShellRunbookScriptHost`
-- `runbooks/src/<id>/`: yerleşik runbook kaynakları (`manifest.json` + `run.ps1`); sürüm paketinde imzalanır
+- `runbooks/src/<id>/`: yerleşik runbook kaynakları (`manifest.json` + `run.ps1`); sürüm paketinde imzalanır. `org.` ön eki kullanılmaz
+- `runbooks/examples/<id>/`: imzasız örnek kurum runbook'ları (`org.example.*`); kılavuz `docs/RUNBOOK-DEVELOPMENT.md`
 - `src/SystemPanel.Contracts/Automation/`: sunucu ve agent'ın ortak runbook çalışma zamanı (paket/imza, parametre kuralları, PowerShell çalıştırıcı)
 - `src/AgentSystemPanel/Automation/`: agent tarafı (`AgentCommandProcessor`: imza + yerel izin listesi + parametre doğrulaması; `AgentCommandWorker`)
 

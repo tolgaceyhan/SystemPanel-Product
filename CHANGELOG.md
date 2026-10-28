@@ -42,6 +42,13 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Sürümleme: [
   - Metrik alımı alarmları otomasyona sınırlı ve kayıplı bir kuyrukla iletir; alım hattı bundan etkilenmez.
   - Ekranlar: zamanlama listesi, oluşturma formu, ayrıntı/onay/devre dışı bırakma.
   - Bağımlılıksız cron ayrıştırıcı eklendi.
+- **Otomasyon — ADR-002 Faz 4 (kurum runbook'ları):**
+  - `sprunbook` aracı (kuruma dağıtılır; lisans üretemez): `keygen`, `fingerprint`, `new`, `lint`, `sign`, `sign-all`, `verify`.
+  - İmzalama denetime bağlıdır: manifest, parametre ve `param()` uyumu, `-DryRun`, yasak kalıplar (dinamik kod, süreç başlatma, indirme), sabit sır. Hatalı runbook imzalanmaz.
+  - `org.` ad alanı kurum anahtarlarına ayrıldı. Runbook kimliği, ilk yayımlayan kaynağa (üretici veya kurum) bağlı kalır.
+  - Kurum anahtarı iptal edilince başlamamış talepler iptal edilir ve zamanlamalar kapatılır (audit'li). Panel özel anahtar PEM'ini reddeder.
+  - Katalog yönetiminde imzalayan kaynak (üretici veya kurum) ve iptal durumu gösterilir.
+  - Runbook geliştirme kılavuzu (`docs/RUNBOOK-DEVELOPMENT.md`) ve dört örnek runbook (`runbooks/examples`); sürüm paketine `tools\sprunbook.exe` ve `runbook-examples\` eklendi.
 - **Lisans:** çevrimdışı imzalı lisans dosyası (ECDSA P-256), lisans ekranı, agent sınırı; lisans sorunu mevcut işlemleri durdurmaz.
 - **Marka:** ürün adı ve logolar yapılandırılabilir (`Branding`).
 - **Organizasyon yapısı:** birim etiketi yapılandırılabilir (`Organization:UnitLabel`; il, bölge, şube...). Türkiye il haritası opsiyonel modül (`Organization:Map:Enabled`, varsayılan kapalı).

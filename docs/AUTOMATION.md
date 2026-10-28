@@ -81,24 +81,36 @@ Ayarlar (`Automation:*`):
 
 Kuyruğu kapatmak için: `BackgroundJobs:Automation:Enabled=false`. Talepler oluşturulur ama çalıştırılmaz.
 
-## Kurumun kendi runbook'ları
+## Kurumun kendi runbook'ları (Faz 4)
 
-1. Anahtar çifti üretin (çevrimdışı, güvenli bir makinede):
-   ```bash
-   splicense runbook-keygen --out <güvenli-klasör>
+Ayrıntılı kılavuz: [RUNBOOK-DEVELOPMENT.md](RUNBOOK-DEVELOPMENT.md). Araç: sürüm paketindeki `tools\sprunbook.exe`.
+Bu aracın lisans üretme yeteneği yoktur; kuruma dağıtılabilir.
+
+1. Anahtar çifti üretin. Bunu panelden ayrı, erişimi kısıtlı bir makinede yapın:
+   ```powershell
+   sprunbook keygen --out <güvenli-klasör>
    ```
-2. **Açık** anahtarı kaydedin: **Otomasyon → Katalog ve anahtarlar → Kurum imzalama anahtarı ekle**.
-3. Runbook'u yazın: `manifest.json` + `run.ps1` (örnekler için `runbooks/src/` klasörüne bakın). Kurallar:
-   - `param()` bloğunda manifestteki her parametre bulunur. Evet/hayır parametreleri `[switch]` olur.
-   - `supportsDryRun: true` ise betik `[switch]$DryRun` alır ve bu modda **hiçbir değişiklik yapmadan** planı JSON olarak yazar. Yüksek riskte önizleme zorunludur.
-   - Sonucu JSON olarak stdout'a yazın. Hata durumunda çıkış kodu 0 olmamalıdır (`$ErrorActionPreference = 'Stop'`).
-   - Sürüm her değişiklikte artırılmalıdır. Aynı sürüm farklı içerikle içe aktarılamaz.
-4. İmzalayın ve içe aktarın:
-   ```bash
-   splicense runbook-sign --key <runbook-signing.private.pem> --source <runbook-klasörü> --out <ad>.sprb
+2. **Açık** anahtarı (`runbook-org-public.pem`) kaydedin: **Otomasyon → Katalog ve anahtarlar → Kurum imzalama anahtarı ekle**.
+   Panel, buraya yapıştırılan özel anahtarı reddeder.
+3. İskelet oluşturun ya da bir örnekten başlayın (`runbook-examples\`):
+   ```powershell
+   sprunbook new --id org.kurum.ad.user-unlock --executor server --risk medium --out runbooks
    ```
-   **Katalog ve anahtarlar → Runbook paketi içe aktar.**
-5. Bir anahtar sızarsa **İptal et** deyin. O anahtarla imzalı tüm runbook'lar hemen çalıştırılamaz hale gelir (kuyruktakiler dahil).
+   Kurum runbook kimlikleri `org.` ile başlar.
+4. Denetleyin ve imzalayın. Denetim hatası olan runbook imzalanmaz:
+   ```powershell
+   sprunbook lint     --source runbooks
+   sprunbook sign-all --key <runbook-org.private.pem> --source runbooks --out paketler
+   ```
+   Paketi **Katalog ve anahtarlar → Runbook paketi içe aktar** ile yükleyin.
+5. **Sahiplik:**
+   - `org.` ön eki kurum anahtarlarına ayrılmıştır.
+   - Bir runbook kimliği ilk kez hangi kaynakla (üretici veya kurum) yüklendiyse sonraki sürümleri de o kaynaktan gelmelidir. Bu sayede kurum anahtarı yerleşik bir runbook'un yerine geçemez.
+   - Kurum içinde anahtar değiştirmek (rotasyon) serbesttir.
+6. **Anahtar sızarsa** kaydı **İptal et** ile iptal edin:
+   - O anahtarla imzalı runbook'lar artık içe aktarılamaz, talep edilemez, onaylanamaz ve çalıştırılamaz.
+   - Henüz başlamamış talepler iptal edilir, bağlı zamanlamalar kapatılır. Tümü audit'e yazılır.
+   - Agent'lardaki anahtar dosyasını da kaldırın.
 
 ## Agent üzerinde çalışan runbook'lar (Faz 2)
 
@@ -195,3 +207,4 @@ Katalogdaki runbook kartında **Zamanla** düğmesine basın (`automation.manage
 
 - Sunucu tarafında ve her agent'ta aynı anda tek iş çalışıyor.
 - Yeniden deneme yok. Başarısız işi yeni talep olarak başlatın.
+- Bir runbook paketi tek bir betikten oluşur. Ek modül veya dosya taşıyamaz; gereken modüller çalıştırılan makinede kurulu olmalıdır.

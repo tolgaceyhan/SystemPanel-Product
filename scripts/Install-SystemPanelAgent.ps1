@@ -42,7 +42,7 @@ if (-not (Test-Path (Join-Path $SourcePath 'SystemPanel.Agent.exe'))) {
 
 # 1) Anahtarı güvenli al ve DPAPI ile koru
 Add-Type -AssemblyName System.Security
-$secure = Read-Host -Prompt 'Agent anahtarı (SystemPanel > Agent\'lar ekranında bir kez gösterilen değer)' -AsSecureString
+$secure = Read-Host -Prompt 'Agent anahtarı (SystemPanel > Agent''lar ekranında bir kez gösterilen değer)' -AsSecureString
 $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
 try {
     $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
